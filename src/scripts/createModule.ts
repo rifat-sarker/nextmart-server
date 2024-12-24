@@ -9,6 +9,7 @@ const createModule = (moduleName: string): void => {
     const files = [
         `${moduleName}.routes.ts`,
         `${moduleName}.controller.ts`,
+        `${moduleName}.model.ts`,
         `${moduleName}.service.ts`,
         `${moduleName}.interface.ts`,
         `${moduleName}.validation.ts`,
@@ -39,6 +40,8 @@ const createModule = (moduleName: string): void => {
                 content = `export interface I${capitalize(moduleName)} {\n  id: string;\n  name: string;\n}\n`;
             } else if (file.endsWith('.validation.ts')) {
                 content = `import { z } from 'zod';\n\nexport const ${moduleName}Validation = {\n  create: z.object({\n    name: z.string().min(1, 'Name is required'),\n  }),\n  update: z.object({\n    id: z.string().uuid('Invalid ID format'),\n    name: z.string().optional(),\n  }),\n};\n`;
+            } else if (file.endsWith('.model.ts')) { // Template for the model.ts file
+                content = `import { Schema, model, Document } from 'mongoose';\n\nexport interface I${capitalize(moduleName)}Model extends Document {\n  name: string;\n  // add more fields here\n}\n\nconst ${moduleName}Schema = new Schema<I${capitalize(moduleName)}Model>({\n  name: { type: String, required: true },\n  // add more fields here\n});\n\nconst ${moduleName}Model = model<I${capitalize(moduleName)}Model>('${capitalize(moduleName)}', ${moduleName}Schema);\n\nexport default ${moduleName}Model;\n`;
             }
 
             fs.writeFileSync(filePath, content, 'utf-8');
