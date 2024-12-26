@@ -1,11 +1,18 @@
 import { Request, Response } from 'express';
-import { userService } from './user.service';
+import { UserServices } from './user.service';
+import catchAsync from '../../utils/catchAsync';
 
-export const userController = {
-  async getAll(req: Request, res: Response) {
-    const data = await userService.getAll();
-    res.json(data);
-  },
-};
+const registerUser = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserServices.registerUser(
+    req.body
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Student is created succesfully',
+    data: result,
+  });
+});
 
 // //
