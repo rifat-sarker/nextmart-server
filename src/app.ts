@@ -6,6 +6,7 @@ import { StatusCodes } from 'http-status-codes';
 import router from './app/routes';
 import globalErrorHandler from './app/middleware/globalErrorHandler';
 import notFound from './app/middleware/notFound';
+import seedAdmin from './app/DB/seed';
 
 
 const app: Application = express();
@@ -17,6 +18,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/v1", router);
+
+// seedAdmin();
 
 // Test route
 app.get('/', (req: Request, res: Response, next: NextFunction) => {

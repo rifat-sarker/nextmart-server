@@ -96,6 +96,10 @@ userSchema.statics.isPasswordMatched = async function (
   return await bcrypt.compare(plainTextPassword, hashedPassword);
 };
 
+userSchema.statics.isUserExistsByEmail = async function (email: string) {
+  return await User.findOne({ email }).select('+password');
+};
+
 // Create and export the User model
 const User = mongoose.model<IUser, UserModel>('User', userSchema);
 export default User;
