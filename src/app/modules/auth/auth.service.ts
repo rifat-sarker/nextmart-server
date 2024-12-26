@@ -27,7 +27,7 @@ const loginUser = async (payload: IAuth) => {
     }
 
     const jwtPayload: IJwtPayload = {
-      userId: user._id as string,  // Ensure _id is cast to a string
+      userId: user._id as string,
       role: user.role,
     };
 
