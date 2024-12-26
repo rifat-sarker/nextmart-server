@@ -3,6 +3,8 @@ import { IUser, UserRole } from './user.interface';
 import User from './user.model';
 import AppError from '../../errors/appError';
 import { StatusCodes } from 'http-status-codes';
+import QueryBuilder from '../../builder/QueryBuilder';
+import { UserSearchableFields } from './user.constant';
 
 // Function to register user
 const registerUser = async (userData: IUser) => {
@@ -27,7 +29,28 @@ const registerUser = async (userData: IUser) => {
   return user;
 };
 
+const getAllUser = async (query: Record<string, unknown>) => {
+  const UserQuery = new QueryBuilder(
+    User.find(),
+    query,
+  )
+    .search(UserSearchableFields)
+    .filter()
+    .sort()
+    .paginate()
+    .fields();
+
+  const result = await UserQuery.modelQuery;
+  const meta = await UserQuery.countTotal();
+  return {
+    result,
+    meta,
+  };
+};
+
+
 
 export const UserServices = {
   registerUser,
+  getAllUser,
 }

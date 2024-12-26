@@ -6,8 +6,13 @@ import { UserValidation } from './user.validation';
 
 const router = Router();
 
-// Define routes
-router.post('/',
+router.get(
+    '/',
+    UserController.getAllUser
+);
+
+router.post(
+    '/',
     clientInfoParser,
     validateRequest(UserValidation.userValidationSchema),
     UserController.registerUser
