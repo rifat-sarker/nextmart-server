@@ -81,6 +81,14 @@ userSchema.post('save', function (doc, next) {
   next();
 });
 
+
+userSchema.set('toJSON', {
+  transform: (_doc, ret) => {
+    delete ret.password;
+    return ret;
+  },
+});
+
 userSchema.statics.isPasswordMatched = async function (
   plainTextPassword,
   hashedPassword,
