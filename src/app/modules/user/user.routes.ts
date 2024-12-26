@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { userController } from './user.controller';
+import { UserController } from './user.controller';
+import clientInfoParser from '../../middleware/clientInfoParser';
 
 const router = Router();
 
 // Define routes
-router.get('/', userController.getAll);
+router.post('/', clientInfoParser, UserController.registerUser);
 
-export default router;
+export const UserRoutes = router;

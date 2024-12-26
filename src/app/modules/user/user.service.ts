@@ -6,6 +6,7 @@ import { StatusCodes } from 'http-status-codes';
 
 // Function to register user
 const registerUser = async (userData: IUser) => {
+
   // Validate the role (must be either 'customer' or 'vendor')
   if (![UserRole.CUSTOMER, UserRole.VENDOR].includes(userData.role)) {
     throw new AppError(StatusCodes.NOT_ACCEPTABLE, 'Invalid role. Only Customer and Vendor are allowed.');

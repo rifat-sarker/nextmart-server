@@ -3,6 +3,9 @@ import express, { Application, NextFunction, Request, Response } from 'express';
 import cookieParser from 'cookie-parser';
 import os from 'os';
 import { StatusCodes } from 'http-status-codes';
+import router from './app/routes';
+import globalErrorHandler from './app/middleware/globalErrorHandler';
+import notFound from './app/middleware/notFound';
 
 
 const app: Application = express();
@@ -13,6 +16,7 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use("/api/v1", router);
 
 // Test route
 app.get('/', (req: Request, res: Response, next: NextFunction) => {
@@ -43,6 +47,11 @@ app.get('/', (req: Request, res: Response, next: NextFunction) => {
         },
     });
 });
+
+app.use(globalErrorHandler);
+
+//Not Found
+app.use(notFound);
 
 
 export default app; // Export the app for use in server.ts

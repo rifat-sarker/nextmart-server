@@ -5,6 +5,7 @@ import sendResponse from '../../utils/sendResponse';
 import { StatusCodes } from 'http-status-codes';
 
 const registerUser = catchAsync(async (req: Request, res: Response) => {
+
   const result = await UserServices.registerUser(
     req.body
   );
