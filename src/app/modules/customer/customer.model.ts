@@ -28,7 +28,7 @@ const customerSchema = new Schema<ICustomer>({
       validator: function (v: string) {
         return /^(http(s)?:\/\/.*\.(?:png|jpg|jpeg))/.test(v);
       },
-      message: 'Invalid photo URL format',
+      message: 'Invalid photo URL format.',
     },
   },
   user: {
