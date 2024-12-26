@@ -25,7 +25,7 @@ const auth = (...requiredRoles: UserRole[]) => {
         const { role, userId, iat } = decoded;
 
         // checking if the user is exist
-        const user = await User.isUserExistsByCustomId(userId);
+        const user = await User.find(); ///
 
         if (!user) {
             throw new AppError(StatusCodes.NOT_FOUND, 'This user is not found !');

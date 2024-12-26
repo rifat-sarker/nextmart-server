@@ -29,8 +29,7 @@ app.get('/', (req: Request, res: Response, next: NextFunction) => {
 
     res.status(StatusCodes.OK).json({
         success: true,
-        message: 'Welcome to the School Management API',
-        description: 'This API supports comprehensive management of school operations, including handling students, teachers, classes, and schedules.',
+        message: 'Welcome to the Next Mart',
         version: '1.0.0',
         clientDetails: {
             ipAddress: clientIp,

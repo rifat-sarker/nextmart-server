@@ -10,7 +10,8 @@
     "start": "node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
-    "create-module": "npx ts-node src/scripts/createModule.ts"
+    "create-module": "npx ts-node src/scripts/createModule.ts",
+    "deploy": "yarn build && vercel && vercel --prod"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
