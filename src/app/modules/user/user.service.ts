@@ -5,28 +5,57 @@ import AppError from '../../errors/appError';
 import { StatusCodes } from 'http-status-codes';
 import QueryBuilder from '../../builder/QueryBuilder';
 import { UserSearchableFields } from './user.constant';
+import Customer from '../customer/customer.model';
+import mongoose from 'mongoose';
 
 // Function to register user
 const registerUser = async (userData: IUser) => {
 
-  // Validate the role (must be either 'customer' or 'vendor')
-  if (![UserRole.CUSTOMER, UserRole.VENDOR].includes(userData.role)) {
-    throw new AppError(StatusCodes.NOT_ACCEPTABLE, 'Invalid role. Only Customer and Vendor are allowed.');
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    if (![UserRole.CUSTOMER, UserRole.VENDOR].includes(userData.role)) {
+      throw new AppError(StatusCodes.NOT_ACCEPTABLE, 'Invalid role. Only Customer and Vendor are allowed.');
+    }
+
+    // Check if the user already exists by email
+    const existingUser = await User.findOne({ email: userData.email }).session(session);
+    if (existingUser) {
+      throw new AppError(StatusCodes.NOT_ACCEPTABLE, 'Email is already registered');
+    }
+
+    // Create the user
+    const user = new User(userData);
+    const createdUser = await user.save({ session });
+
+    // Create the appropriate profile based on the user's role
+    let profile;
+
+    if (createdUser.role === UserRole.CUSTOMER) {
+      profile = new Customer({
+        user: createdUser._id,
+      });
+    } else {
+      profile = new Customer({
+        user: createdUser._id,
+      });
+    }
+
+
+    await profile.save({ session });
+
+    // Commit the transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    return createdUser;
+  } catch (error) {
+    // Abort the transaction on error
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
   }
-
-  // Check if the user already exists by email
-  const existingUser = await User.findOne({ email: userData.email });
-  if (existingUser) {
-    throw new AppError(StatusCodes.NOT_ACCEPTABLE, 'Email is already registered');
-  }
-
-  // Create the user
-  const user = new User(userData);
-
-  // Save the user to the database
-  await user.save();
-
-  return user;
 };
 
 const getAllUser = async (query: Record<string, unknown>) => {
