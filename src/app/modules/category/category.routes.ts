@@ -9,7 +9,7 @@ const router = Router();
 
 router.post(
     '/',
-    auth(UserRole.ADMIN),
+    auth(UserRole.ADMIN, UserRole.VENDOR),
     multerUpload.single('icon'),
     parseBody,
     CategoryController.createCategory
