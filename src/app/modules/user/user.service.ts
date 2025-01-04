@@ -65,8 +65,15 @@ const registerVendor = async (vendorData: IUser & { vendor: IVendor }, logo: IIm
     }
 
     // Create the user
-    const user = new User(userData);
+    const user = new User({
+      ...userData,
+      role: UserRole.VENDOR
+    });
     const createdUser = await user.save({ session });
+
+    if (logo) {
+      vendor.logo = logo.path
+    }
 
     const profile = new Vendor({
       user: createdUser._id,
