@@ -68,21 +68,24 @@ const initPayment = async (paymentData: { total_amount: number, tran_id: string 
 };
 
 
-const validatePaymentService = async (val_id: string): Promise<string> => {
+const validatePaymentService = async (tran_id: string): Promise<string> => {
     const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
 
     const session = await mongoose.startSession();
     session.startTransaction();
-
+    console.log({ tran_id })
     try {
         //@ts-ignore
-        const validationResponse = await sslcz.validate({
-            val_id
+        const validationResponse = await sslcz.transactionQueryByTransactionId({
+            tran_id
         });
+
+        console.log(validationResponse.element)
 
         let data;
 
         if (validationResponse.status === 'VALID') {
+
             data = {
                 status: 'Paid',
                 gatewayResponse: validationResponse

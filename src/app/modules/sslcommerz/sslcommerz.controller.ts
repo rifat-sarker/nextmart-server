@@ -6,7 +6,7 @@ import { StatusCodes } from 'http-status-codes';
 import { sslService } from './sslcommerz.service';
 
 const validatePaymentService = catchAsync(async (req: Request, res: Response) => {
-    const val_id = req.query.val_id as string;
+    const val_id = req.query.tran_id as string;
     const result = await sslService.validatePaymentService(
         val_id
     );
