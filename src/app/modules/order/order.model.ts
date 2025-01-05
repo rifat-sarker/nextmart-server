@@ -59,7 +59,7 @@ const orderSchema = new Schema<IOrder>(
     },
     paymentMethod: {
       type: String,
-      enum: ['Cash', 'Card', 'Online'],
+      enum: ['COD', 'Online'],
       default: 'Online',
     },
     paymentStatus: {
