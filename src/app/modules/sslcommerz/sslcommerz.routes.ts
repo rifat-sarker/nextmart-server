@@ -4,10 +4,9 @@ import { SSLController } from './sslcommerz.controller';
 const router = Router();
 
 // Define routes
-// router.get('/', orderController.getAll);
 
 router.post(
-    '/ipn',
+    '/validate',
     SSLController.validatePaymentService
 )
 

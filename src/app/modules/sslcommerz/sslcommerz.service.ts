@@ -22,10 +22,10 @@ const initPayment = async (paymentData: { total_amount: number, tran_id: string 
         total_amount,
         currency: 'BDT',
         tran_id, // Use unique tran_id for each API call
-        success_url: 'http://localhost:3030/success',
-        fail_url: 'http://localhost:3030/fail',
+        success_url: `${config.ssl.validation_url}?tran_id=${tran_id}`,
+        fail_url: config.ssl.failed_url as string,
         cancel_url: 'http://localhost:3030/cancel',
-        ipn_url: 'http://localhost:3030/ipn',
+        ipn_url: 'http://next-mart-steel.vercel.app/api/v1/ssl/ipn',
         shipping_method: 'Courier',
         product_name: 'N/A.',
         product_category: 'N/A',
@@ -68,12 +68,12 @@ const initPayment = async (paymentData: { total_amount: number, tran_id: string 
 };
 
 
-const validatePaymentService = async (tran_id: string): Promise<string> => {
+const validatePaymentService = async (tran_id: string): Promise<boolean> => {
     const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
 
     const session = await mongoose.startSession();
     session.startTransaction();
-    console.log({ tran_id })
+
     try {
         //@ts-ignore
         const validationResponse = await sslcz.transactionQueryByTransactionId({
@@ -84,34 +84,34 @@ const validatePaymentService = async (tran_id: string): Promise<string> => {
 
         let data;
 
-        if (validationResponse.status === 'VALID') {
+        if (validationResponse.element[0].status === 'VALID' || validationResponse.element[0].status === 'VALIDATED') {
 
             data = {
                 status: 'Paid',
-                gatewayResponse: validationResponse
+                gatewayResponse: validationResponse.element[0]
             };
 
-        } else if (validationResponse.status === 'INVALID_TRANSACTION') {
+        } else if (validationResponse.element[0].status === 'INVALID_TRANSACTION') {
             data = {
                 status: 'Failed',
-                gatewayResponse: validationResponse
+                gatewayResponse: validationResponse.element[0]
             };
         } else {
             data = {
                 status: 'Failed',
-                gatewayResponse: validationResponse
+                gatewayResponse: validationResponse.element[0]
             };
         }
 
 
         const updatedPayment = await Payment.findOneAndUpdate(
-            { transactionId: validationResponse.tran_id },
+            { transactionId: validationResponse.element[0].tran_id },
             data,
             { new: true, session }
         );
 
         if (!updatedPayment) {
-            throw new Error('Payment not found or could not be updated.');
+            return false;
         }
 
         const updatedOrder = await Order.findByIdAndUpdate(
@@ -123,21 +123,24 @@ const validatePaymentService = async (tran_id: string): Promise<string> => {
         );
 
         if (!updatedOrder) {
-            throw new Error('Order not found or could not be updated.');
+            return false;
+        }
+
+        if (data.status === 'Failed') {
+            return false;
         }
 
         await session.commitTransaction();
         session.endSession();
 
-        return "Payment verified!"
+        return true;
 
     } catch (error) {
         // Rollback the transaction if an error occurs
         await session.abortTransaction();
         session.endSession();
 
-        console.error('Error during SSLCommerz validation service:', error);
-        return "Error Occured!"
+        return false
     }
 };
 
