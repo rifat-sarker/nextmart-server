@@ -22,8 +22,6 @@ app.use("/api/v1", router);
 
 // seedAdmin();
 
-app.get("/api/v1/payment", sslService.initPayment);
-
 // Test route
 app.get('/', (req: Request, res: Response, next: NextFunction) => {
 
