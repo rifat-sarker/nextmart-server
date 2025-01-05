@@ -20,7 +20,18 @@ const customerSchema = new Schema<ICustomer>({
     type: Date,
   },
   address: {
-    type: String,
+    home: {
+      type: String,
+    },
+    work: {
+      type: String,
+    },
+    partner: {
+      type: String,
+    },
+    other: {
+      type: String,
+    },
   },
   photo: {
     type: String,
