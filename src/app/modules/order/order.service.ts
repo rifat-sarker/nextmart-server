@@ -4,6 +4,9 @@ import { Coupon } from "../coupon/coupon.model"
 import { IOrder } from "./order.interface"
 import { Order } from "./order.model"
 import { Product } from "../product/product.model"
+import { Payment } from "../payment/payment.model"
+import { generateTransactionId } from "../payment/payment.utils"
+import { sslService } from "../sslcommerz/sslcommerz.service"
 
 const createOrder = async (orderData: Partial<IOrder>, authUser: IJwtPayload) => {
   const session = await mongoose.startSession();
@@ -59,14 +62,39 @@ const createOrder = async (orderData: Partial<IOrder>, authUser: IJwtPayload) =>
       ...orderData,
       user: authUser.userId,
     });
-    await order.save({ session });
+    const createdOrder = await order.save({ session });
+
+    const transactionId = generateTransactionId();
+
+    const payment = new Payment({
+      user: authUser.userId,
+      order: createdOrder._id,
+      method: orderData.paymentMethod,
+      transactionId,
+      amount: createdOrder.finalAmount
+    });
+
+    await payment.save({ session })
+
+    let result;
+
+    if (orderData.paymentMethod == 'Online') {
+      result = await sslService.initPayment({
+        total_amount: createdOrder.finalAmount,
+        tran_id: transactionId
+      });
+      result = { paymentUrl: result }
+    } else {
+      result = order;
+    }
 
     // Commit the transaction
     await session.commitTransaction();
     session.endSession();
 
-    return order;
+    return result;
   } catch (error) {
+    console.log(error)
     // Rollback the transaction in case of error
     await session.abortTransaction();
     session.endSession();

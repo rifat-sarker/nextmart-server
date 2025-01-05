@@ -5,6 +5,7 @@ import { CategoryRoutes } from '../modules/category/category.routes';
 import { ProductRoutes } from '../modules/product/product.routes';
 import { OrderRoutes } from '../modules/order/order.routes';
 import { CouponRoutes } from '../modules/coupon/coupon.routes';
+import { SSLRoutes } from '../modules/sslcommerz/sslcommerz.routes';
 const router = Router();
 
 const moduleRoutes = [
@@ -31,6 +32,10 @@ const moduleRoutes = [
     {
         path: '/coupon',
         route: CouponRoutes,
+    },
+    {
+        path: '/ssl',
+        route: SSLRoutes,
     },
 ];
 

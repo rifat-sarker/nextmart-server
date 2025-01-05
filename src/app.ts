@@ -7,6 +7,7 @@ import router from './app/routes';
 import globalErrorHandler from './app/middleware/globalErrorHandler';
 import notFound from './app/middleware/notFound';
 import seedAdmin from './app/DB/seed';
+import { sslService } from './app/modules/sslcommerz/sslcommerz.service';
 
 
 const app: Application = express();
@@ -20,6 +21,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/v1", router);
 
 // seedAdmin();
+
+app.get("/api/v1/payment", sslService.initPayment);
 
 // Test route
 app.get('/', (req: Request, res: Response, next: NextFunction) => {
