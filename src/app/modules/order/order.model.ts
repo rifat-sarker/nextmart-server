@@ -119,7 +119,7 @@ orderSchema.pre('validate', async function (next) {
         if (couponDetails.discountType === 'Percentage') {
           finalDiscount = Math.min((couponDetails.discountValue / 100) * totalAmount, couponDetails.maxDiscountAmount ? couponDetails.maxDiscountAmount : Infinity);
         } else if (couponDetails.discountType === 'Flat') {
-          finalDiscount = Math.min(Math.min((couponDetails.discountValue, couponDetails.maxDiscountAmount ? couponDetails.maxDiscountAmount : Infinity), totalAmount));
+          finalDiscount = Math.min(couponDetails.discountValue, totalAmount);
         }
       }
     }
