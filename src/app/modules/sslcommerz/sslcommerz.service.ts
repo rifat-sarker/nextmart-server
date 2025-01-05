@@ -24,7 +24,7 @@ const initPayment = async (paymentData: { total_amount: number, tran_id: string 
         tran_id, // Use unique tran_id for each API call
         success_url: `${config.ssl.validation_url}?tran_id=${tran_id}`,
         fail_url: config.ssl.failed_url as string,
-        cancel_url: 'http://localhost:3030/cancel',
+        cancel_url: config.ssl.cancel_url as string,
         ipn_url: 'http://next-mart-steel.vercel.app/api/v1/ssl/ipn',
         shipping_method: 'Courier',
         product_name: 'N/A.',
