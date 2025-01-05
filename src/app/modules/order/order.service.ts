@@ -10,6 +10,29 @@ const createOrder = async (orderData: Partial<IOrder>, authUser: IJwtPayload) =>
   session.startTransaction();
 
   try {
+
+    // Update stock for each product in the order
+    if (orderData.products) {
+      for (const productItem of orderData.products) {
+        const product = await Product.findById(productItem.product).populate('vendor').session(session);
+
+        if (product) {
+          if (product.isActive === false) {
+            throw new Error(`Product ${product?.name} is inactive.`);
+          }
+
+          if (product.stock < productItem.quantity) {
+            throw new Error(`Insufficient stock for product: ${product.name}`);
+          }
+          // Decrement the product stock
+          product.stock -= productItem.quantity;
+          await product.save({ session });
+        } else {
+          throw new Error(`Product not found: ${productItem.product}`);
+        }
+      }
+    }
+
     // Handle coupon and update orderData
     if (orderData.coupon) {
       const coupon = await Coupon.findOne({ code: orderData.coupon }).session(session);
@@ -28,24 +51,6 @@ const createOrder = async (orderData: Partial<IOrder>, authUser: IJwtPayload) =>
         orderData.coupon = coupon._id as Types.ObjectId;
       } else {
         throw new Error('Invalid coupon code.');
-      }
-    }
-
-    // Update stock for each product in the order
-    if (orderData.products) {
-      for (const productItem of orderData.products) {
-        const product = await Product.findById(productItem.product).session(session);
-
-        if (product) {
-          if (product.stock < productItem.quantity) {
-            throw new Error(`Insufficient stock for product: ${product.name}`);
-          }
-          // Decrement the product stock
-          product.stock -= productItem.quantity;
-          await product.save({ session });
-        } else {
-          throw new Error(`Product not found: ${productItem.product}`);
-        }
       }
     }
 

@@ -1,11 +1,18 @@
-import { Schema, model } from 'mongoose';
+import { Schema, Types, model } from 'mongoose';
 import { IOrder } from './order.interface';
 import { Product } from '../product/product.model';
 import { Coupon } from '../coupon/coupon.model';
+import AppError from '../../errors/appError';
+import { StatusCodes } from 'http-status-codes';
 
 const orderSchema = new Schema<IOrder>(
   {
     user: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    vendor: {
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
@@ -86,13 +93,8 @@ orderSchema.pre('validate', async function (next) {
   for (let item of order.products) {
     const product = await Product.findById(item.product).populate('vendor');
 
-    if (!product || product.isActive === false) {
-      return next(new Error(`Product ${product?.name} is inactive.`));
-    }
-
-    // Check product stock availability
-    if (product.stock < item.quantity) {
-      return next(new Error(`Not enough stock for ${product.name}.`));
+    if (!product) {
+      return next(new Error(`Product not found!.`));
     }
 
     // Check if products are from the same vendor
@@ -132,6 +134,8 @@ orderSchema.pre('validate', async function (next) {
   order.discount = finalDiscount;
   order.deliveryCharge = deliveryCharge;
   order.finalAmount = totalAmount - finalDiscount + deliveryCharge;
+  //@ts-ignore
+  order.vendor = vendorId;
 
   next();
 });

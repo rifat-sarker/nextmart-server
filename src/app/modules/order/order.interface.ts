@@ -9,6 +9,7 @@ export interface IOrderProduct {
 
 export interface IOrder extends Document {
   user: Types.ObjectId; // Reference to the User model
+  vendor: Types.ObjectId; // Reference to the User model
   products: IOrderProduct[]; // Array of products in the order
   coupon: Types.ObjectId | null; // Reference to the Coupon model
   totalAmount: number; // Total amount before applying discount
