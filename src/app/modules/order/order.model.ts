@@ -115,9 +115,9 @@ orderSchema.pre('validate', async function (next) {
       // Check if coupon is applicable based on order amount
       if (totalAmount >= couponDetails.minOrderAmount) {
         if (couponDetails.discountType === 'Percentage') {
-          finalDiscount = (couponDetails.discountValue / 100) * totalAmount;
+          finalDiscount = Math.min((couponDetails.discountValue / 100) * totalAmount, couponDetails.maxDiscountAmount ? couponDetails.maxDiscountAmount : Infinity);
         } else if (couponDetails.discountType === 'Flat') {
-          finalDiscount = Math.min(couponDetails.discountValue, totalAmount);
+          finalDiscount = Math.min(Math.min((couponDetails.discountValue, couponDetails.maxDiscountAmount ? couponDetails.maxDiscountAmount : Infinity), totalAmount));
         }
       }
     }

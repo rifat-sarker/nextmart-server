@@ -1,9 +1,15 @@
 import { Router } from 'express';
+import auth from '../../middleware/auth';
+import { UserRole } from '../user/user.interface';
 import { couponController } from './coupon.controller';
 
 const router = Router();
 
 // Define routes
-router.get('/', couponController.getAll);
+router.post(
+    '/',
+    auth(UserRole.ADMIN),
+    couponController.createCoupon
+);
 
-export default router;
+export const CouponRoutes = router;
