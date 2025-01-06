@@ -40,7 +40,7 @@ const initPayment = async (paymentData: { total_amount: number, tran_id: string 
         cus_country: 'Bangladesh',
         cus_phone: '01711111111',
         cus_fax: '01711111111',
-        ship_name: 'Customer Name',
+        ship_name: 'N/A',
         ship_add1: 'Dhaka',
         ship_add2: 'Dhaka',
         ship_city: 'Dhaka',
