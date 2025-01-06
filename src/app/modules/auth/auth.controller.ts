@@ -6,27 +6,26 @@ import { StatusCodes } from 'http-status-codes';
 import config from '../../config';
 
 const loginUser = catchAsync(async (req, res) => {
-  const result = await AuthService.loginUser(req.body);
-  const { refreshToken, accessToken } = result;
+   const result = await AuthService.loginUser(req.body);
+   const { refreshToken, accessToken } = result;
 
-  res.cookie('refreshToken', refreshToken, {
-    secure: config.NODE_ENV === 'production',
-    httpOnly: true,
-    sameSite: 'none',
-    maxAge: 1000 * 60 * 60 * 24 * 365,
-  });
+   res.cookie('refreshToken', refreshToken, {
+      secure: config.NODE_ENV === 'production',
+      httpOnly: true,
+      sameSite: 'none',
+      maxAge: 1000 * 60 * 60 * 24 * 365,
+   });
 
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: 'User logged in succesfully!',
-    data: {
-      accessToken,
-    },
-  });
+   sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: 'User logged in successfully!',
+      data: {
+         accessToken,
+      },
+   });
 });
 
-
 export const AuthController = {
-  loginUser
-}
+   loginUser,
+};
