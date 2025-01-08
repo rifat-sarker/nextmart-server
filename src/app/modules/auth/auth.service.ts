@@ -11,6 +11,8 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import path from 'path';
 import fs from 'fs';
+import emailSender from '../../utils/emailSender';
+import { generateOtp } from '../../utils/generateOtp';
 
 const loginUser = async (payload: IAuth) => {
    const session = await mongoose.startSession();
@@ -141,14 +143,12 @@ const changePassword = async (
 };
 
 const forgotPassword = async ({ email }: { email: string }) => {
-   //@ checking if the user exist
    const user = await User.findOne({ email: email });
    if (!user) {
       throw new AppError(StatusCodes.NOT_FOUND, 'User not found');
    }
 
-   // Generating a 4 digit OTP
-   const otp = Math.floor(1000 + Math.random() * 9000).toString();
+   const otp = generateOtp();
 
    // Creating a JWT token with the OTP and a 5 minute expiry
    const otpToken = jwt.sign({ otp, email }, config.jwt_otp_secret as string, {
@@ -157,14 +157,23 @@ const forgotPassword = async ({ email }: { email: string }) => {
 
    await User.updateOne({ email }, { otpToken });
 
-   console.log({ otpToken });
-
    const htmlFilePath = path.join(
       process.cwd(),
       '/src/templates/otp_template.html'
    );
    const htmlTemplate = fs.readFileSync(htmlFilePath, 'utf8');
    const htmlContent = htmlTemplate.replace('{{otpCode}}', otp);
+
+   try {
+      await emailSender(email, htmlContent);
+   } catch (error) {
+      await User.updateOne({ email }, { $unset: { otpToken: 1 } });
+
+      throw new AppError(
+         StatusCodes.INTERNAL_SERVER_ERROR,
+         'Failed to send OTP email. Please try again later.'
+      );
+   }
 };
 
 export const AuthService = {
