@@ -9,6 +9,8 @@ import { JwtPayload, Secret } from 'jsonwebtoken';
 import { VerifiedUser } from '../../interface/user';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import path from 'path';
+import fs from 'fs';
 
 const loginUser = async (payload: IAuth) => {
    const session = await mongoose.startSession();
@@ -153,7 +155,16 @@ const forgotPassword = async ({ email }: { email: string }) => {
       expiresIn: '5m',
    });
 
+   await User.updateOne({ email }, { otpToken });
+
    console.log({ otpToken });
+
+   const htmlFilePath = path.join(
+      process.cwd(),
+      '/src/templates/otp_template.html'
+   );
+   const htmlTemplate = fs.readFileSync(htmlFilePath, 'utf8');
+   const htmlContent = htmlTemplate.replace('{{otpCode}}', otp);
 };
 
 export const AuthService = {
