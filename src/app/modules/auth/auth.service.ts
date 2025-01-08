@@ -86,21 +86,7 @@ const refreshToken = async (refreshToken: string) => {
 
    console.log(decodedData);
 
-   //   const userData = await prisma.user.findUniqueOrThrow({
-   //     where: {
-   //        email: decodedData.email,
-   //        status: UserStatus.ACTIVE,
-   //     },
-   //  });
-
-   //  const accessToken = createToken(
-   //     {
-   //        email: userData.email,
-   //        role: userData.role,
-   //     },
-   //     config.jwt.jwt_secret as Secret,
-   //     config.jwt.expires_in as string
-   //  );
+   // @ more logic will fo here
 
    return {
       // accessToken,
@@ -114,7 +100,6 @@ const changePassword = async (
    const { userId } = userData;
    const { oldPassword, newPassword } = payload;
 
-   // Validate user existence and status
    const user = await User.findOne({ _id: userId });
    if (!user) {
       throw new AppError(StatusCodes.NOT_FOUND, 'User not found');
