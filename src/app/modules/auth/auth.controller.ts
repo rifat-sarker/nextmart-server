@@ -29,6 +29,9 @@ const loginUser = catchAsync(async (req, res) => {
 // refresh token
 const refreshToken = catchAsync(async (req: Request, res: Response) => {
    const { refreshToken } = req.cookies;
+   console.log(req.cookies);
+   const result = await AuthService.refreshToken(refreshToken);
+   console.log(result);
 });
 
 // change password
@@ -38,8 +41,11 @@ const changePassword = catchAsync(
       const payload = req.body;
    }
 );
+
 // forgot password
 const forgotPassword = catchAsync(async (req: Request, res: Response) => {});
+
+// reset password
 
 export const AuthController = {
    loginUser,
