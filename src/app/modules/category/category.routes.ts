@@ -9,6 +9,8 @@ import { categoryValidation } from './category.validation';
 
 const router = Router();
 
+router.get("/", CategoryController.getAllCategory)
+
 router.post(
     '/',
     auth(UserRole.ADMIN, UserRole.VENDOR),
