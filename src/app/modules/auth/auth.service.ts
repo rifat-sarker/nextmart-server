@@ -1,3 +1,4 @@
+import { ClientSession } from 'mongoose';
 import { StatusCodes } from 'http-status-codes';
 import AppError from '../../errors/appError';
 import User from '../user/user.model';
@@ -184,46 +185,63 @@ const resetPassword = async ({
    otp: string;
    newPassword: string;
 }) => {
-   const user = await User.findOne({ email: email });
-   if (!user) {
-      throw new AppError(StatusCodes.NOT_FOUND, 'User not found');
-   }
+   const session: ClientSession = await User.startSession();
 
-   const decodedOtpData = verifyToken(
-      user.otpToken as string,
-      config.jwt_otp_secret as string
-   );
+   try {
+      session.startTransaction();
 
-   console.log({
-      decodedOtpData,
-      otp,
-      newPassword,
-      salt: config.bcrypt_salt_rounds,
-   });
+      const user = await User.findOne({ email: email }).session(session);
+      if (!user) {
+         throw new AppError(StatusCodes.NOT_FOUND, 'User not found');
+      }
 
-   if (!decodedOtpData) {
-      throw new AppError(
-         StatusCodes.FORBIDDEN,
-         'OTP has expired or is invalid'
+      if (!user.otpToken || user.otpToken === '') {
+         throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'No OTP token found. Please request a new password reset OTP.'
+         );
+      }
+
+      const decodedOtpData = verifyToken(
+         user.otpToken as string,
+         config.jwt_otp_secret as string
       );
+
+      if (!decodedOtpData) {
+         throw new AppError(
+            StatusCodes.FORBIDDEN,
+            'OTP has expired or is invalid'
+         );
+      }
+
+      if (decodedOtpData.otp !== otp) {
+         throw new AppError(StatusCodes.FORBIDDEN, 'Invalid OTP');
+      }
+
+      const hashedPassword = await bcrypt.hash(
+         String(newPassword),
+         Number(config.bcrypt_salt_rounds)
+      );
+
+      await User.updateOne({ email }, { password: hashedPassword }).session(
+         session
+      );
+
+      await User.updateOne({ email }, { $unset: { otpToken: '' } }).session(
+         session
+      );
+
+      await session.commitTransaction();
+
+      return {
+         message: 'Password changed successfully',
+      };
+   } catch (error) {
+      await session.abortTransaction();
+      throw error;
+   } finally {
+      session.endSession();
    }
-
-   if (decodedOtpData.otp !== otp) {
-      throw new AppError(StatusCodes.FORBIDDEN, 'Invalid OTP');
-   }
-
-   const hashedPassword = await bcrypt.hash(
-      String(newPassword),
-      Number(config.bcrypt_salt_rounds)
-   );
-
-   await User.updateOne({ email }, { password: hashedPassword });
-
-   await User.updateOne({ email }, { $unset: { otpToken: '' } });
-
-   return {
-      message: 'Password changed successfully',
-   };
 };
 
 export const AuthService = {
