@@ -5,7 +5,9 @@ import { IAuth, IJwtPayload } from './auth.interface';
 import { createToken, verifyToken } from './auth.utils';
 import config from '../../config';
 import mongoose from 'mongoose';
-import { Secret } from 'jsonwebtoken';
+import { JwtPayload, Secret } from 'jsonwebtoken';
+import { VerifiedUser } from '../../interface/user';
+import bcrypt from 'bcrypt';
 
 const loginUser = async (payload: IAuth) => {
    const session = await mongoose.startSession();
@@ -100,7 +102,43 @@ const refreshToken = async (refreshToken: string) => {
    };
 };
 
+const changePassword = async (
+   userData: JwtPayload,
+   payload: { oldPassword: string; newPassword: string }
+) => {
+   const { userId } = userData;
+   const { oldPassword, newPassword } = payload;
+
+   // Validate user existence and status
+   const user = await User.findOne({ _id: userId });
+   if (!user) {
+      throw new AppError(StatusCodes.NOT_FOUND, 'User not found');
+   }
+   if (!user.isActive) {
+      throw new AppError(StatusCodes.FORBIDDEN, 'User account is inactive');
+   }
+
+   // Validate old password
+   const isOldPasswordCorrect = await User.isPasswordMatched(
+      oldPassword,
+      user.password
+   );
+   if (!isOldPasswordCorrect) {
+      throw new AppError(StatusCodes.FORBIDDEN, 'Incorrect old password');
+   }
+
+   // Hash and update the new password
+   const hashedPassword = await bcrypt.hash(
+      newPassword,
+      Number(config.bcrypt_salt_rounds)
+   );
+   await User.updateOne({ _id: userId }, { password: hashedPassword });
+
+   return { message: 'Password changed successfully' };
+};
+
 export const AuthService = {
    loginUser,
    refreshToken,
+   changePassword,
 };

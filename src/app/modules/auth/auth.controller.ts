@@ -4,6 +4,7 @@ import sendResponse from '../../utils/sendResponse';
 import catchAsync from '../../utils/catchAsync';
 import { StatusCodes } from 'http-status-codes';
 import config from '../../config';
+import { VerifiedUser } from '../../interface/user';
 
 const loginUser = catchAsync(async (req, res) => {
    const result = await AuthService.loginUser(req.body);
@@ -35,12 +36,18 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
 });
 
 // change password
-const changePassword = catchAsync(
-   async (req: Request & { user?: any }, res: Response) => {
-      const user = req.user;
-      const payload = req.body;
-   }
-);
+const changePassword = catchAsync(async (req: Request, res: Response) => {
+   const user = req.user;
+   const payload = req.body;
+
+   const result = await AuthService.changePassword(user, payload);
+   sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: 'Password changed successfully!',
+      data: result,
+   });
+});
 
 // forgot password
 const forgotPassword = catchAsync(async (req: Request, res: Response) => {});
