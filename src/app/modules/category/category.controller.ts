@@ -24,7 +24,7 @@ const createCategory = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllCategory = catchAsync(async (req, res) => {
-  const result = await CategoryService.getCategoriesWithHierarchy(req.query);
+  const result = await CategoryService.getAllCategory(req.query);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -35,7 +35,25 @@ const getAllCategory = catchAsync(async (req, res) => {
   });
 });
 
+const updateCategory = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const result = await CategoryService.updateCategoryIntoDB(
+    id,
+    req.body,
+    req.file as IImageFile,
+    req.user as IJwtPayload
+  );
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'category is updated succesfully',
+    data: result,
+  });
+});
+
 export const CategoryController = {
   createCategory,
-  getAllCategory
+  getAllCategory,
+  updateCategory
 }

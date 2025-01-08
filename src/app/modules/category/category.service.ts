@@ -1,8 +1,12 @@
+import { StatusCodes } from "http-status-codes";
 import QueryBuilder from "../../builder/QueryBuilder";
+import AppError from "../../errors/appError";
 import { IImageFile } from "../../interface/IImageFile";
 import { IJwtPayload } from "../auth/auth.interface";
 import { ICategory } from "./category.interface";
 import { Category } from "./category.model";
+import User from "../user/user.model";
+import { UserRole } from "../user/user.interface";
 
 const createCategory = async (
   categoryData: Partial<ICategory>,
@@ -21,7 +25,7 @@ const createCategory = async (
   return result;
 };
 
-const getCategoriesWithHierarchy = async (query: Record<string, unknown>) => {
+const getAllCategory = async (query: Record<string, unknown>) => {
   const categoryQuery = new QueryBuilder(
     Category.find().populate('parent'),
     query,
@@ -57,9 +61,37 @@ const getCategoriesWithHierarchy = async (query: Record<string, unknown>) => {
   };
 };
 
+const updateCategoryIntoDB = async (
+  id: string,
+  payload: Partial<ICategory>,
+  file: IImageFile,
+  authUser: IJwtPayload
+) => {
+  const isCategoryExist = await Category.findById(id);
+  if (!isCategoryExist) {
+    throw new AppError(StatusCodes.NOT_FOUND, "Category not found!")
+  }
+
+  if ((authUser.role === UserRole.VENDOR) && (isCategoryExist.createdBy.toString() !== authUser.userId)) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "You are not able to edit the category!")
+  }
+
+  if (file && file.path) {
+    payload.icon = file.path
+  }
+
+  const result = await Category.findByIdAndUpdate(
+    id,
+    payload,
+    { new: true }
+  );
+
+  return result;
+};
 
 
 export const CategoryService = {
   createCategory,
-  getCategoriesWithHierarchy
+  getAllCategory,
+  updateCategoryIntoDB
 }

@@ -13,14 +13,15 @@ const createCategoryValidationSchema = z.object({
 
 
 const updateCategoryValidationSchema = z.object({
-  name: z
-    .string()
-    .max(100, "Category name should not exceed 100 characters")
-    .optional(),
-  description: z.string().optional(),
-  parent: z.string().optional().nullable(),
-  isActive: z.boolean().optional(),
-  icon: z.string().optional(),
+  body: z.object({
+    name: z
+      .string()
+      .max(100, "Category name should not exceed 100 characters")
+      .optional(),
+    description: z.string().optional(),
+    parent: z.string().optional().nullable(),
+    isActive: z.boolean().optional()
+  })
 });
 
 export const categoryValidation = {
