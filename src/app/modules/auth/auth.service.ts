@@ -73,7 +73,6 @@ const loginUser = async (payload: IAuth) => {
 };
 
 const refreshToken = async (refreshToken: string) => {
-   console.log(refreshToken);
    let decodedData;
    try {
       decodedData = verifyToken(
@@ -176,9 +175,61 @@ const forgotPassword = async ({ email }: { email: string }) => {
    }
 };
 
+const resetPassword = async ({
+   email,
+   otp,
+   newPassword,
+}: {
+   email: string;
+   otp: string;
+   newPassword: string;
+}) => {
+   const user = await User.findOne({ email: email });
+   if (!user) {
+      throw new AppError(StatusCodes.NOT_FOUND, 'User not found');
+   }
+
+   const decodedOtpData = verifyToken(
+      user.otpToken as string,
+      config.jwt_otp_secret as string
+   );
+
+   console.log({
+      decodedOtpData,
+      otp,
+      newPassword,
+      salt: config.bcrypt_salt_rounds,
+   });
+
+   if (!decodedOtpData) {
+      throw new AppError(
+         StatusCodes.FORBIDDEN,
+         'OTP has expired or is invalid'
+      );
+   }
+
+   if (decodedOtpData.otp !== otp) {
+      throw new AppError(StatusCodes.FORBIDDEN, 'Invalid OTP');
+   }
+
+   const hashedPassword = await bcrypt.hash(
+      String(newPassword),
+      Number(config.bcrypt_salt_rounds)
+   );
+
+   await User.updateOne({ email }, { password: hashedPassword });
+
+   await User.updateOne({ email }, { $unset: { otpToken: '' } });
+
+   return {
+      message: 'Password changed successfully',
+   };
+};
+
 export const AuthService = {
    loginUser,
    refreshToken,
    changePassword,
    forgotPassword,
+   resetPassword,
 };
