@@ -1,11 +1,29 @@
 import { z } from 'zod';
 
+const createCategoryValidationSchema = z.object({
+  body: z.object({
+    name: z
+      .string()
+      .nonempty("Category name is required")
+      .max(100, "Category name should not exceed 100 characters"),
+    description: z.string().optional(),
+    parent: z.string().optional().nullable()
+  })
+});
+
+
+const updateCategoryValidationSchema = z.object({
+  name: z
+    .string()
+    .max(100, "Category name should not exceed 100 characters")
+    .optional(),
+  description: z.string().optional(),
+  parent: z.string().optional().nullable(),
+  isActive: z.boolean().optional(),
+  icon: z.string().optional(),
+});
+
 export const categoryValidation = {
-  create: z.object({
-    name: z.string().min(1, 'Name is required'),
-  }),
-  update: z.object({
-    id: z.string().uuid('Invalid ID format'),
-    name: z.string().optional(),
-  }),
-};
+  createCategoryValidationSchema,
+  updateCategoryValidationSchema
+}

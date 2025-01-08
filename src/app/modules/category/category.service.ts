@@ -12,7 +12,7 @@ const createCategory = async (
   const category = new Category({
     ...categoryData,
     createdBy: authUser.userId,
-    icon: icon.path
+    icon: icon?.path
   });
 
   const result = await category.save();
