@@ -4,6 +4,7 @@ import sendResponse from '../../utils/sendResponse';
 import catchAsync from '../../utils/catchAsync';
 import { StatusCodes } from 'http-status-codes';
 import config from '../../config';
+import { VerifiedUser } from '../../interface/user';
 
 const loginUser = catchAsync(async (req, res) => {
    const result = await AuthService.loginUser(req.body);
@@ -35,21 +36,50 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
 });
 
 // change password
-const changePassword = catchAsync(
-   async (req: Request & { user?: any }, res: Response) => {
-      const user = req.user;
-      const payload = req.body;
-   }
-);
+const changePassword = catchAsync(async (req: Request, res: Response) => {
+   const user = req.user;
+   const payload = req.body;
+
+   await AuthService.changePassword(user, payload);
+
+   sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: 'Password changed successfully!',
+      data: null,
+   });
+});
 
 // forgot password
-const forgotPassword = catchAsync(async (req: Request, res: Response) => {});
+const forgotPassword = catchAsync(async (req: Request, res: Response) => {
+   await AuthService.forgotPassword(req.body);
+   sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: 'Check your email to reset your password',
+      data: null,
+   });
+});
 
 // reset password
+
+const resetPassword = catchAsync(async (req: Request, res: Response) => {
+   const payload = req.body;
+
+   const result = await AuthService.resetPassword(payload);
+
+   sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: 'Password reset successfully!',
+      data: result,
+   });
+});
 
 export const AuthController = {
    loginUser,
    refreshToken,
    changePassword,
    forgotPassword,
+   resetPassword,
 };
