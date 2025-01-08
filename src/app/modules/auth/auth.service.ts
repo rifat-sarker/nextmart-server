@@ -8,6 +8,7 @@ import mongoose from 'mongoose';
 import { JwtPayload, Secret } from 'jsonwebtoken';
 import { VerifiedUser } from '../../interface/user';
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
 const loginUser = async (payload: IAuth) => {
    const session = await mongoose.startSession();
@@ -137,8 +138,27 @@ const changePassword = async (
    return { message: 'Password changed successfully' };
 };
 
+const forgotPassword = async ({ email }: { email: string }) => {
+   //@ checking if the user exist
+   const user = await User.findOne({ email: email });
+   if (!user) {
+      throw new AppError(StatusCodes.NOT_FOUND, 'User not found');
+   }
+
+   // Generating a 4 digit OTP
+   const otp = Math.floor(1000 + Math.random() * 9000).toString();
+
+   // Creating a JWT token with the OTP and a 5 minute expiry
+   const otpToken = jwt.sign({ otp, email }, config.jwt_otp_secret as string, {
+      expiresIn: '5m',
+   });
+
+   console.log({ otpToken });
+};
+
 export const AuthService = {
    loginUser,
    refreshToken,
    changePassword,
+   forgotPassword,
 };
