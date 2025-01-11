@@ -9,6 +9,11 @@ import { productValidation } from './product.validation';
 
 const router = Router();
 
+router.get(
+    '/',
+    ProductControler.getAllProduct
+)
+
 router.post(
     '/',
     auth(UserRole.VENDOR),
