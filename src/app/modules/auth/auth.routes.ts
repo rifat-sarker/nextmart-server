@@ -2,19 +2,21 @@ import { Router } from 'express';
 import { AuthController } from './auth.controller';
 import clientInfoParser from '../../middleware/clientInfoParser';
 import authGuard from '../../middleware/authGuard';
+import auth from '../../middleware/auth';
+import { UserRole } from '../user/user.interface';
 
 const router = Router();
 
 router.post('/login', clientInfoParser, AuthController.loginUser);
 
-router.post('/refreshToken', AuthController.refreshToken);
+router.post('/refresh-token', AuthController.refreshToken);
 router.post(
-   '/changePassword',
-   authGuard('customer', 'vendor'),
+   '/change-password',
+   auth(UserRole.ADMIN, UserRole.VENDOR, UserRole.CUSTOMER),
    AuthController.changePassword
 );
 
-router.post('/forgotPassword', AuthController.forgotPassword);
-router.post('/resetPassword', AuthController.resetPassword);
+router.post('/forgot-password', AuthController.forgotPassword);
+router.post('/reset-password', AuthController.resetPassword);
 
 export const AuthRoutes = router;

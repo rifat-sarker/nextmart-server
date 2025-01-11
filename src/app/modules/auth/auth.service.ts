@@ -6,14 +6,11 @@ import { IAuth, IJwtPayload } from './auth.interface';
 import { createToken, verifyToken } from './auth.utils';
 import config from '../../config';
 import mongoose from 'mongoose';
-import { JwtPayload, Secret } from 'jsonwebtoken';
-import { VerifiedUser } from '../../interface/user';
+import { JwtPayload } from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import path from 'path';
-import fs from 'fs';
-import emailSender from '../../utils/emailSender';
 import { generateOtp } from '../../utils/generateOtp';
+import { EmailHelper } from '../../utils/emailHelper';
 
 const loginUser = async (payload: IAuth) => {
    const session = await mongoose.startSession();
@@ -129,28 +126,30 @@ const changePassword = async (
 
 const forgotPassword = async ({ email }: { email: string }) => {
    const user = await User.findOne({ email: email });
+
    if (!user) {
       throw new AppError(StatusCodes.NOT_FOUND, 'User not found');
    }
 
+   if (!user.isActive) {
+      throw new AppError(StatusCodes.BAD_REQUEST, 'User is not active!');
+   }
+
    const otp = generateOtp();
 
-   // Creating a JWT token with the OTP and a 5 minute expiry
    const otpToken = jwt.sign({ otp, email }, config.jwt_otp_secret as string, {
       expiresIn: '5m',
    });
 
    await User.updateOne({ email }, { otpToken });
 
-   const htmlFilePath = path.join(
-      process.cwd(),
-      '/src/templates/otp_template.html'
-   );
-   const htmlTemplate = fs.readFileSync(htmlFilePath, 'utf8');
-   const htmlContent = htmlTemplate.replace('{{otpCode}}', otp);
-
    try {
-      await emailSender(email, htmlContent);
+      const emailContent = await EmailHelper.createEmailContent(
+         { otpCode: otp, userName: user.name },
+         'forgotPassword'
+      );
+
+      await EmailHelper.sendEmail(email, emailContent, "Reset Password OTP");
    } catch (error) {
       await User.updateOne({ email }, { $unset: { otpToken: 1 } });
 
