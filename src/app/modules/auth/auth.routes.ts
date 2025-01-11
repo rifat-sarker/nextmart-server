@@ -8,14 +8,14 @@ const router = Router();
 
 router.post('/login', clientInfoParser, AuthController.loginUser);
 
-router.post('/refreshToken', AuthController.refreshToken);
+router.post('/refresh-token', AuthController.refreshToken);
 router.post(
    '/changePassword',
    auth(UserRole.CUSTOMER, UserRole.VENDOR),
    AuthController.changePassword
 );
 
-router.post('/forgotPassword', AuthController.forgotPassword);
-router.post('/resetPassword', AuthController.resetPassword);
+router.post('/forgot-password', AuthController.forgotPassword);
+router.post('/reset-password', AuthController.resetPassword);
 
 export const AuthRoutes = router;
