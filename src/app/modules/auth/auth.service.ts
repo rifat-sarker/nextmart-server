@@ -143,14 +143,6 @@ const forgotPassword = async ({ email }: { email: string }) => {
 
    await User.updateOne({ email }, { otpToken });
 
-   // const htmlFilePath = path.join(
-   //    process.cwd(),
-   //    '/src/templates/otp_template.html'
-   // );
-   // const htmlTemplate = fs.readFileSync(htmlFilePath, 'utf8');
-   // let htmlContent = htmlTemplate.replace('{{otpCode}}', otp);
-   // htmlContent = htmlTemplate.replace('{{userName}}', user.name);
-
    try {
       const emailContent = await EmailHelper.createEmailContent(
          { otpCode: otp, userName: user.name },
