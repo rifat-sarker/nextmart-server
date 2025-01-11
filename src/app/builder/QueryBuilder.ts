@@ -77,6 +77,20 @@ class QueryBuilder<T> {
             totalPage,
         };
     }
+
+    priceRange(minPrice?: number, maxPrice?: number) {
+        const priceFilter: Record<string, unknown> = {};
+        if (minPrice !== undefined) priceFilter.$gte = minPrice;
+        if (maxPrice !== undefined) priceFilter.$lte = maxPrice;
+
+        if (minPrice !== undefined || maxPrice !== undefined) {
+            this.modelQuery = this.modelQuery.find({
+                price: priceFilter,
+            } as FilterQuery<T>);
+        }
+
+        return this;
+    }
 }
 
 export default QueryBuilder;
