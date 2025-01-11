@@ -9,6 +9,7 @@ import { Product } from "./product.model";
 import { log } from "console";
 import QueryBuilder from "../../builder/QueryBuilder";
 import { ProductSearchableFields } from "./product.constant";
+import { Order } from "../order/order.model";
 
 const createProduct = async (
   productData: Partial<IProduct>,
@@ -66,7 +67,62 @@ const getAllProduct = async (query: Record<string, unknown>) => {
   };
 }
 
+
+const getTrendingProducts = async (limit: number) => {
+  const now = new Date();
+  const last30Days = new Date(now.setDate(now.getDate() - 30));
+
+  const trendingProducts = await Order.aggregate([
+    {
+      $match: {
+        createdAt: { $gte: last30Days },
+      },
+    },
+    {
+      $unwind: "$products",
+    },
+    {
+      $group: {
+        _id: "$products.product",
+        orderCount: { $sum: "$products.quantity" },
+      },
+    },
+    {
+      $sort: { orderCount: -1 },
+    },
+    {
+      $limit: limit || 10,
+    },
+    {
+      $lookup: {
+        from: "products",
+        localField: "_id",
+        foreignField: "_id",
+        as: "productDetails",
+      },
+    },
+    {
+      $unwind: "$productDetails",
+    },
+    {
+      $project: {
+        _id: 0,
+        productId: "$_id",
+        orderCount: 1,
+        name: "$productDetails.name",
+        price: "$productDetails.price",
+        offer: "$productDetails.offer",
+        imageUrls: "$productDetails.imageUrls",
+      },
+    },
+  ]);
+
+  return trendingProducts;
+};
+
+
 export const ProductService = {
   createProduct,
-  getAllProduct
+  getAllProduct,
+  getTrendingProducts
 }

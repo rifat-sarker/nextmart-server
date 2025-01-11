@@ -58,6 +58,11 @@ const productSchema = new Schema<IProduct>(
       ref: "User",
       required: [true, "User who created the product is required"],
     },
+    brand: {
+      type: Schema.Types.ObjectId,
+      ref: "Brand",
+      required: [true, "Brand of product is required"],
+    },
     averageRating: {
       type: Number,
       default: 0,
