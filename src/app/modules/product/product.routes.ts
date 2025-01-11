@@ -14,6 +14,11 @@ router.get(
     ProductControler.getAllProduct
 )
 
+router.get(
+    '/trending',
+    ProductControler.getTrendingProducts
+)
+
 router.post(
     '/',
     auth(UserRole.VENDOR),
