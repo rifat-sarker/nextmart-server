@@ -9,7 +9,8 @@ import config from '../config';
 const sendEmail = async (
    email: string,
    html: string,
-   subject: string
+   subject: string,
+   attachment: { filename: string, content: Buffer, encoding: string }
 ) => {
    const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
@@ -30,6 +31,13 @@ const sendEmail = async (
       subject, // Subject line
       //text: "Hello world?", // plain text body
       html, // html body
+      attachments: [
+         {
+            filename: attachment.filename,  // Filename of the attachment
+            content: attachment.content,    // Content (Buffer) of the attachment
+            encoding: attachment.encoding   // Encoding type (use 'base64' if necessary)
+         }
+      ]
    });
 }
 
