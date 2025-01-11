@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { AuthController } from './auth.controller';
 import clientInfoParser from '../../middleware/clientInfoParser';
 import authGuard from '../../middleware/authGuard';
+import auth from '../../middleware/auth';
+import { UserRole } from '../user/user.interface';
 
 const router = Router();
 
@@ -10,7 +12,7 @@ router.post('/login', clientInfoParser, AuthController.loginUser);
 router.post('/refreshToken', AuthController.refreshToken);
 router.post(
    '/changePassword',
-   authGuard('customer', 'vendor'),
+   auth(UserRole.CUSTOMER, UserRole.VENDOR),
    AuthController.changePassword
 );
 
