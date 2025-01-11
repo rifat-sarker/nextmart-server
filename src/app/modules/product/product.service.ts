@@ -7,6 +7,8 @@ import { IProduct } from "./product.interface";
 import { Category } from "../category/category.model";
 import { Product } from "./product.model";
 import { log } from "console";
+import QueryBuilder from "../../builder/QueryBuilder";
+import { ProductSearchableFields } from "./product.constant";
 
 const createProduct = async (
   productData: Partial<IProduct>,
@@ -26,11 +28,7 @@ const createProduct = async (
     throw new AppError(StatusCodes.BAD_REQUEST, "Vendor account is not active!");
   }
 
-  console.log(productData.category);
-
   const isCategoryExists = await Category.findById(productData.category);
-
-  console.log(isCategoryExists);
 
   if (!isCategoryExists) {
     throw new AppError(StatusCodes.BAD_REQUEST, "Category is not exists!");
@@ -49,6 +47,26 @@ const createProduct = async (
   return result;
 }
 
+const getAllProduct = async (query: Record<string, unknown>) => {
+  const { minPrice, maxPrice, ...pQuery } = query;
+  const productQuery = new QueryBuilder(Product.find(), pQuery)
+    .search(ProductSearchableFields)
+    .filter()
+    .sort()
+    .paginate()
+    .fields()
+    .priceRange(Number(minPrice), Number(maxPrice));
+
+  const result = await productQuery.modelQuery;
+  const meta = await productQuery.countTotal();
+
+  return {
+    meta,
+    result,
+  };
+}
+
 export const ProductService = {
-  createProduct
+  createProduct,
+  getAllProduct
 }
