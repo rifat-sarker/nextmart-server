@@ -48,12 +48,14 @@ const createProduct = async (
 }
 
 const getAllProduct = async (query: Record<string, unknown>) => {
-  const productQuery = new QueryBuilder(Product.find(), query)
+  const { minPrice, maxPrice, ...pQuery } = query;
+  const productQuery = new QueryBuilder(Product.find(), pQuery)
     .search(ProductSearchableFields)
     .filter()
     .sort()
     .paginate()
-    .fields();
+    .fields()
+    .priceRange(Number(minPrice), Number(maxPrice));
 
   const result = await productQuery.modelQuery;
   const meta = await productQuery.countTotal();

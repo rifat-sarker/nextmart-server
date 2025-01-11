@@ -13,6 +13,8 @@ export interface IProduct extends Document {
   imageUrls: string[];
   isActive: boolean;
   vendor: Types.ObjectId; // Assuming reference to User collection
+  averageRating?: number;
+  ratingCount?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
