@@ -1,15 +1,31 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model } from "mongoose";
+import { IBrand } from "./brand.interface";
 
-export interface IBrandModel extends Document {
-  name: string;
-  // add more fields here
-}
+const brandSchema = new Schema<IBrand>(
+  {
+    name: {
+      type: String,
+      required: [true, "Brand name is required"],
+      unique: true,
+      trim: true,
+    },
+    logo: {
+      type: String,
+      required: [true, "Brand logo URL is required"],
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
-const brandSchema = new Schema<IBrandModel>({
-  name: { type: String, required: true },
-  // add more fields here
-});
-
-const brandModel = model<IBrandModel>('Brand', brandSchema);
-
-export default brandModel;
+export const Brand = model<IBrand>("Brand", brandSchema);

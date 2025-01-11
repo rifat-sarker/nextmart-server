@@ -1,9 +1,29 @@
 import { Router } from 'express';
-import { brandController } from './brand.controller';
+import { multerUpload } from '../../config/multer.config';
+import { parseBody } from '../../middleware/bodyParser';
+import auth from '../../middleware/auth';
+import { UserRole } from '../user/user.interface';
+import validateRequest from '../../middleware/validateRequest';
+import { BrandController } from './brand.controller';
 
 const router = Router();
 
-// Define routes
-router.get('/', brandController.getAll);
+router.get("/", BrandController.getAllBrand)
 
-export default router;
+router.post(
+    '/',
+    auth(UserRole.ADMIN, UserRole.VENDOR),
+    multerUpload.single('logo'),
+    parseBody,
+    BrandController.createBrand
+);
+
+router.patch(
+    '/:id',
+    auth(UserRole.ADMIN, UserRole.VENDOR),
+    multerUpload.single('logo'),
+    parseBody,
+    BrandController.updateBrand
+)
+
+export const BrandRoutes = router;

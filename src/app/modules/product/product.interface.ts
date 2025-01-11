@@ -7,12 +7,13 @@ export interface IProduct extends Document {
   description: string;
   price: number;
   stock: number;
-  weight: number | null;  // Weight can now be null
-  offer: number;  // Could be a percentage string like '10%' or null
-  category: Types.ObjectId; // Assuming reference to Category collection
+  weight: number | null;
+  offer: number;
+  category: Types.ObjectId;
   imageUrls: string[];
   isActive: boolean;
-  vendor: Types.ObjectId; // Assuming reference to User collection
+  vendor: Types.ObjectId;
+  brand: Types.ObjectId;
   averageRating?: number;
   ratingCount?: number;
   createdAt?: Date;

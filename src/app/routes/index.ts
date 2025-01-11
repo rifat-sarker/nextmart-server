@@ -6,6 +6,7 @@ import { ProductRoutes } from '../modules/product/product.routes';
 import { OrderRoutes } from '../modules/order/order.routes';
 import { CouponRoutes } from '../modules/coupon/coupon.routes';
 import { SSLRoutes } from '../modules/sslcommerz/sslcommerz.routes';
+import { BrandRoutes } from '../modules/brand/brand.routes';
 const router = Router();
 
 const moduleRoutes = [
@@ -20,6 +21,10 @@ const moduleRoutes = [
     {
         path: '/category',
         route: CategoryRoutes,
+    },
+    {
+        path: '/brand',
+        route: BrandRoutes,
     },
     {
         path: '/product',

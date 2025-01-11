@@ -1,9 +1,58 @@
 import { Request, Response } from 'express';
-import { brandService } from './brand.service';
+import catchAsync from '../../utils/catchAsync';
+import { IImageFile } from '../../interface/IImageFile';
+import sendResponse from '../../utils/sendResponse';
+import { StatusCodes } from 'http-status-codes';
+import { IJwtPayload } from '../auth/auth.interface';
+import { BrandService } from './brand.service';
 
-export const brandController = {
-  async getAll(req: Request, res: Response) {
-    const data = await brandService.getAll();
-    res.json(data);
-  },
-};
+const createBrand = catchAsync(async (req: Request, res: Response) => {
+
+  const result = await BrandService.createBrand(
+    req.body,
+    req.file as IImageFile,
+    req.user as IJwtPayload
+  );
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Brand created succesfully',
+    data: result,
+  });
+});
+
+const getAllBrand = catchAsync(async (req, res) => {
+  const result = await BrandService.getAllBrand(req.query);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Brand are retrieved succesfully',
+    meta: result.meta,
+    data: result.result,
+  });
+});
+
+const updateBrand = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const result = await BrandService.updateBrandIntoDB(
+    id,
+    req.body,
+    req.file as IImageFile,
+    req.user as IJwtPayload
+  );
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Brand is updated succesfully',
+    data: result,
+  });
+});
+
+export const BrandController = {
+  createBrand,
+  getAllBrand,
+  updateBrand
+}
