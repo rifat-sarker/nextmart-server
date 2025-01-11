@@ -37,9 +37,22 @@ const getAllProduct = catchAsync(async (req, res) => {
   });
 });
 
+const getTrendingProducts = catchAsync(async (req, res) => {
+  const { limit } = req.query;
+  const result = await ProductService.getTrendingProducts(Number(limit));
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Products are retrieved successfully',
+    data: result,
+  });
+});
+
 
 
 export const ProductControler = {
   createProduct,
-  getAllProduct
+  getAllProduct,
+  getTrendingProducts
 }
