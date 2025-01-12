@@ -10,26 +10,29 @@ import { parseBody } from '../../middleware/bodyParser';
 
 const router = Router();
 
-router.get(
-    '/',
-    auth(UserRole.ADMIN),
-    UserController.getAllUser
-);
+router.get('/', auth(UserRole.ADMIN), UserController.getAllUser);
 
 router.post(
-    '/customer',
-    clientInfoParser,
-    validateRequest(UserValidation.userValidationSchema),
-    UserController.registerUser
+   '/customer',
+   clientInfoParser,
+   validateRequest(UserValidation.userValidationSchema),
+   UserController.registerUser
 );
 
+// update profile
+router.patch('/update-profile', () => {});
+
 router.post(
-    '/vendor',
-    multerUpload.single('logo'),
-    parseBody,
-    clientInfoParser,
-    //validateRequest(UserValidation.userValidationSchema),
-    UserController.registerVendor
+   '/vendor',
+   multerUpload.single('logo'),
+   parseBody,
+   clientInfoParser,
+   //validateRequest(UserValidation.userValidationSchema),
+   UserController.registerVendor
 );
+
+// admin =>  get all user
+
+// admin =>  block or unblock a user
 
 export const UserRoutes = router;
