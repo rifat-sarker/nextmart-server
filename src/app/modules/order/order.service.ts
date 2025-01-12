@@ -7,6 +7,8 @@ import { Product } from "../product/product.model"
 import { Payment } from "../payment/payment.model"
 import { generateTransactionId } from "../payment/payment.utils"
 import { sslService } from "../sslcommerz/sslcommerz.service"
+import { generateOrderInvoicePDF } from "../../utils/generateOrderInvoicePDF"
+import { EmailHelper } from "../../utils/emailHelper"
 
 const createOrder = async (orderData: Partial<IOrder>, authUser: IJwtPayload) => {
   const session = await mongoose.startSession();
@@ -62,7 +64,9 @@ const createOrder = async (orderData: Partial<IOrder>, authUser: IJwtPayload) =>
       ...orderData,
       user: authUser.userId,
     });
+
     const createdOrder = await order.save({ session });
+    await createdOrder.populate('user products.product');
 
     const transactionId = generateTransactionId();
 
@@ -92,6 +96,26 @@ const createOrder = async (orderData: Partial<IOrder>, authUser: IJwtPayload) =>
     await session.commitTransaction();
     session.endSession();
 
+    const pdfBuffer = await generateOrderInvoicePDF(createdOrder);
+    const emailContent = await EmailHelper.createEmailContent(
+      //@ts-ignore
+      { userName: createdOrder.user.name || "" },
+      'orderInvoice'
+    );
+
+    const attachment = {
+      filename: `Invoice_${createdOrder._id}.pdf`,
+      content: pdfBuffer,
+      encoding: 'base64', // if necessary
+    };
+
+    await EmailHelper.sendEmail(
+      //@ts-ignore
+      createdOrder.user.email,
+      emailContent,
+      "Order confirmed!",
+      attachment
+    );
     return result;
   } catch (error) {
     console.log(error)
