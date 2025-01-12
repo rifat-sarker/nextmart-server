@@ -20,7 +20,14 @@ router.post(
 );
 
 // update profile
-router.patch('/update-profile', UserController.updateUserStatus);
+router.patch(
+   '/update-profile',
+   auth(UserRole.CUSTOMER),
+   multerUpload.single('profilePhoto'),
+   parseBody,
+   validateRequest(UserValidation.customerInfoValidationSchema),
+   UserController.updateProfile
+);
 
 router.post(
    '/vendor',
