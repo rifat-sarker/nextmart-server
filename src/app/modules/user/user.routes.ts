@@ -31,8 +31,11 @@ router.post(
    UserController.registerVendor
 );
 
-// admin =>  get all user
-
 // admin =>  block or unblock a user
+router.patch(
+   '/:id/status',
+   auth(UserRole.ADMIN),
+   UserController.updateUserStatus
+);
 
 export const UserRoutes = router;
