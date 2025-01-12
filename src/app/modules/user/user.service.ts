@@ -9,6 +9,8 @@ import mongoose from 'mongoose';
 import Vendor from '../vendor/vendor.model';
 import { IVendor } from '../vendor/vendor.interface';
 import { IImageFile } from '../../interface/IImageFile';
+import { ICustomer } from '../customer/customer.interface';
+import { IJwtPayload } from '../auth/auth.interface';
 
 // Function to register user
 const registerUser = async (userData: IUser) => {
@@ -125,17 +127,30 @@ const getAllUser = async (query: Record<string, unknown>) => {
    };
 };
 
-const updateProfile = async (userId: string) => {
-   const user = await User.findById(userId);
-   if (!user) {
-      throw new AppError(StatusCodes.NOT_FOUND, 'User is not found');
+const updateProfile = async (
+   payload: Partial<ICustomer>,
+   file: IImageFile,
+   authUser: IJwtPayload
+) => {
+   if (file && file.path) {
+      payload.photo = file.path;
    }
 
-   return '';
+   const result = await Customer.findOneAndUpdate(
+      { user: authUser.userId },
+      payload,
+      {
+         new: true,
+      }
+   );
+
+   return result;
 };
 
 const updateUserStatus = async (userId: string) => {
    const user = await User.findById(userId);
+
+   console.log('comes here');
    if (!user) {
       throw new AppError(StatusCodes.NOT_FOUND, 'User is not found');
    }
