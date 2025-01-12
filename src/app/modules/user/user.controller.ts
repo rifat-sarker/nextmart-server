@@ -12,7 +12,7 @@ const registerUser = catchAsync(async (req: Request, res: Response) => {
    sendResponse(res, {
       statusCode: StatusCodes.OK,
       success: true,
-      message: 'User created succesfully',
+      message: 'User created successfully',
       data: result,
    });
 });
@@ -44,8 +44,6 @@ const getAllUser = catchAsync(async (req, res) => {
 });
 
 const updateProfile = catchAsync(async (req, res) => {
-   console.dir(req.body, { depth: null });
-   console.log(req.file);
    const result = await UserServices.updateProfile(
       req.body,
       req.file as IImageFile,
