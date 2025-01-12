@@ -20,7 +20,7 @@ router.post(
 );
 
 // update profile
-router.patch('/update-profile', () => {});
+router.patch('/update-profile', UserController.updateUserStatus);
 
 router.post(
    '/vendor',
@@ -31,7 +31,7 @@ router.post(
    UserController.registerVendor
 );
 
-// admin =>  block or unblock a user
+// admin =>  toggle user status
 router.patch(
    '/:id/status',
    auth(UserRole.ADMIN),
