@@ -1,4 +1,3 @@
-// src/modules/user/service.ts
 import { IUser, UserRole } from './user.interface';
 import User from './user.model';
 import AppError from '../../errors/appError';
@@ -126,6 +125,15 @@ const getAllUser = async (query: Record<string, unknown>) => {
    };
 };
 
+const updateProfile = async (userId: string) => {
+   const user = await User.findById(userId);
+   if (!user) {
+      throw new AppError(StatusCodes.NOT_FOUND, 'User is not found');
+   }
+
+   return '';
+};
+
 const updateUserStatus = async (userId: string) => {
    const user = await User.findById(userId);
    if (!user) {
@@ -142,4 +150,5 @@ export const UserServices = {
    getAllUser,
    registerVendor,
    updateUserStatus,
+   updateProfile,
 };

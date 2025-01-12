@@ -7,52 +7,51 @@ import { IJwtPayload } from '../auth/auth.interface';
 import { BrandService } from './brand.service';
 
 const createBrand = catchAsync(async (req: Request, res: Response) => {
+   const result = await BrandService.createBrand(
+      req.body,
+      req.file as IImageFile,
+      req.user as IJwtPayload
+   );
 
-  const result = await BrandService.createBrand(
-    req.body,
-    req.file as IImageFile,
-    req.user as IJwtPayload
-  );
-
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: 'Brand created succesfully',
-    data: result,
-  });
+   sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: 'Brand created successfully',
+      data: result,
+   });
 });
 
 const getAllBrand = catchAsync(async (req, res) => {
-  const result = await BrandService.getAllBrand(req.query);
+   const result = await BrandService.getAllBrand(req.query);
 
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: 'Brand are retrieved succesfully',
-    meta: result.meta,
-    data: result.result,
-  });
+   sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: 'Brand are retrieved successfully',
+      meta: result.meta,
+      data: result.result,
+   });
 });
 
 const updateBrand = catchAsync(async (req, res) => {
-  const { id } = req.params;
-  const result = await BrandService.updateBrandIntoDB(
-    id,
-    req.body,
-    req.file as IImageFile,
-    req.user as IJwtPayload
-  );
+   const { id } = req.params;
+   const result = await BrandService.updateBrandIntoDB(
+      id,
+      req.body,
+      req.file as IImageFile,
+      req.user as IJwtPayload
+   );
 
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: 'Brand is updated succesfully',
-    data: result,
-  });
+   sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: 'Brand is updated successfully',
+      data: result,
+   });
 });
 
 export const BrandController = {
-  createBrand,
-  getAllBrand,
-  updateBrand
-}
+   createBrand,
+   getAllBrand,
+   updateBrand,
+};

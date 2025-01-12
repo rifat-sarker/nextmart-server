@@ -42,6 +42,17 @@ const getAllUser = catchAsync(async (req, res) => {
    });
 });
 
+const updateProfile = catchAsync(async (req, res) => {
+   const userId = req.params.id;
+   const result = await UserServices.updateUserStatus(userId);
+
+   sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: `Profile updated successfully`,
+      data: result,
+   });
+});
 const updateUserStatus = catchAsync(async (req, res) => {
    const userId = req.params.id;
    const result = await UserServices.updateUserStatus(userId);
@@ -59,4 +70,5 @@ export const UserController = {
    getAllUser,
    registerVendor,
    updateUserStatus,
+   updateProfile,
 };
