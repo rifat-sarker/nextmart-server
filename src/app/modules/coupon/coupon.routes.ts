@@ -6,10 +6,8 @@ import { couponController } from './coupon.controller';
 const router = Router();
 
 // Define routes
-router.post(
-    '/',
-    auth(UserRole.ADMIN),
-    couponController.createCoupon
-);
+router.post('/', auth(UserRole.ADMIN), couponController.createCoupon);
+
+router.get('/', auth(UserRole.ADMIN), couponController.getAllCoupon);
 
 export const CouponRoutes = router;

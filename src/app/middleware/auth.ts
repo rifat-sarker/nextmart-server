@@ -8,36 +8,44 @@ import { StatusCodes } from 'http-status-codes';
 import User from '../modules/user/user.model';
 
 const auth = (...requiredRoles: UserRole[]) => {
-    return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-        const token = req.headers.authorization;
+   return catchAsync(
+      async (req: Request, res: Response, next: NextFunction) => {
+         const token = req.headers.authorization;
 
-        if (!token) {
-            throw new AppError(StatusCodes.UNAUTHORIZED, 'You are not authorized!');
-        }
-
-        const decoded = jwt.verify(
-            token,
-            config.jwt_access_secret as string,
-        ) as JwtPayload;
-
-        const { role, userId, email, iat } = decoded;
-
-        const user = await User.findOne({ email, role, isActive: true });
-
-        if (!user) {
-            throw new AppError(StatusCodes.NOT_FOUND, 'This user is not found !');
-        }
-
-        if (requiredRoles && !requiredRoles.includes(role)) {
+         if (!token) {
             throw new AppError(
-                StatusCodes.UNAUTHORIZED,
-                'You are not authorized!',
+               StatusCodes.UNAUTHORIZED,
+               'You are not authorized!'
             );
-        }
+         }
 
-        req.user = decoded as JwtPayload & { role: string };
-        next();
-    });
+         const decoded = jwt.verify(
+            token,
+            config.jwt_access_secret as string
+         ) as JwtPayload;
+
+         const { role, userId, email, iat } = decoded;
+
+         const user = await User.findOne({ email, role, isActive: true });
+
+         if (!user) {
+            throw new AppError(
+               StatusCodes.NOT_FOUND,
+               'This user is not found !'
+            );
+         }
+
+         if (requiredRoles && !requiredRoles.includes(role)) {
+            throw new AppError(
+               StatusCodes.UNAUTHORIZED,
+               'You are not authorized!'
+            );
+         }
+
+         req.user = decoded as JwtPayload & { role: string };
+         next();
+      }
+   );
 };
 
 export default auth;
