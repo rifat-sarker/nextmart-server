@@ -13,22 +13,21 @@ const router = Router();
 router.get('/', auth(UserRole.ADMIN), UserController.getAllUser);
 
 router.post(
-    '/',
-    clientInfoParser,
-    validateRequest(UserValidation.userValidationSchema),
-    UserController.registerUser
+   '/',
+   clientInfoParser,
+   validateRequest(UserValidation.userValidationSchema),
+   UserController.registerUser
 );
 // update profile
 router.patch(
    '/update-profile',
-   auth(UserRole.CUSTOMER),
+   auth(UserRole.USER),
    multerUpload.single('profilePhoto'),
    parseBody,
    validateRequest(UserValidation.customerInfoValidationSchema),
    UserController.updateProfile
 );
 
-// admin =>  toggle user status
 router.patch(
    '/:id/status',
    auth(UserRole.ADMIN),
