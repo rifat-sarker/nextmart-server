@@ -55,7 +55,7 @@ const updateBrandIntoDB = async (
    }
 
    if (
-      authUser.role === UserRole.ADMIN &&
+      authUser.role === UserRole.USER &&
       isBrandExist.createdBy.toString() !== authUser.userId
    ) {
       throw new AppError(

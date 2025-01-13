@@ -12,9 +12,9 @@ const orderSchema = new Schema<IOrder>(
       ref: 'User',
       required: true,
     },
-    vendor: {
+    shop: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
+      ref: 'Shop',
       required: true,
     },
     products: [
@@ -28,6 +28,10 @@ const orderSchema = new Schema<IOrder>(
           type: Number,
           required: true,
           min: 1,
+        },
+        color: {
+          type: String,
+          required: true
         },
       },
     ],
@@ -87,26 +91,22 @@ orderSchema.pre('validate', async function (next) {
   // Step 1: Initialize total amount
   let totalAmount = 0;
   let finalDiscount = 0;
-  let vendorId: Schema.Types.ObjectId | null = null;
+  let shopId: Schema.Types.ObjectId | null = null;
 
   // Step 2: Calculate total amount for products
   for (let item of order.products) {
-    const product = await Product.findById(item.product).populate('vendor');
+    const product = await Product.findById(item.product).populate('shop');
 
     if (!product) {
       return next(new Error(`Product not found!.`));
     }
-
-    // Check if products are from the same vendor
-    if (vendorId && String(vendorId) !== String(product.vendor._id)) {
-      return next(new Error('Products must be from the same vendor.'));
+    if (shopId && String(shopId) !== String(product.shop._id)) {
+      return next(new Error('Products must be from the same shop.'));
     }
     //@ts-ignore
-    vendorId = product.vendor._id;
+    shopId = product.shop._id;
 
-    // Calculate price with product offer
-    const offerPrice = product.price * (1 - product.offer / 100);
-    const price = offerPrice * item.quantity;
+    const price = product.price * item.quantity;
     totalAmount += price;
   }
 
@@ -135,7 +135,7 @@ orderSchema.pre('validate', async function (next) {
   order.deliveryCharge = deliveryCharge;
   order.finalAmount = totalAmount - finalDiscount + deliveryCharge;
   //@ts-ignore
-  order.vendor = vendorId;
+  order.shop = shopId;
 
   next();
 });

@@ -21,6 +21,20 @@ const createShop = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getMyShop = catchAsync(async (req: Request, res: Response) => {
+  const result = await ShopService.getMyShop(
+    req.user as IJwtPayload
+  );
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Shop retrive successfully!',
+    data: result
+  });
+});
+
 export const ShopController = {
-  createShop
+  createShop,
+  getMyShop
 }

@@ -72,7 +72,7 @@ const updateCategoryIntoDB = async (
     throw new AppError(StatusCodes.NOT_FOUND, "Category not found!")
   }
 
-  if ((authUser.role === UserRole.VENDOR) && (isCategoryExist.createdBy.toString() !== authUser.userId)) {
+  if ((authUser.role === UserRole.USER) && (isCategoryExist.createdBy.toString() !== authUser.userId)) {
     throw new AppError(StatusCodes.BAD_REQUEST, "You are not able to edit the category!")
   }
 
