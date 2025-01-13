@@ -10,17 +10,29 @@ import { parseBody } from '../../middleware/bodyParser';
 
 const router = Router();
 
-router.get(
-    '/',
-    auth(UserRole.ADMIN),
-    UserController.getAllUser
-);
+router.get('/', auth(UserRole.ADMIN), UserController.getAllUser);
 
 router.post(
     '/',
     clientInfoParser,
     validateRequest(UserValidation.userValidationSchema),
     UserController.registerUser
+);
+// update profile
+router.patch(
+   '/update-profile',
+   auth(UserRole.CUSTOMER),
+   multerUpload.single('profilePhoto'),
+   parseBody,
+   validateRequest(UserValidation.customerInfoValidationSchema),
+   UserController.updateProfile
+);
+
+// admin =>  toggle user status
+router.patch(
+   '/:id/status',
+   auth(UserRole.ADMIN),
+   UserController.updateUserStatus
 );
 
 export const UserRoutes = router;
