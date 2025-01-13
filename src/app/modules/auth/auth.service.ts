@@ -6,7 +6,7 @@ import { IAuth, IJwtPayload } from './auth.interface';
 import { createToken, verifyToken } from './auth.utils';
 import config from '../../config';
 import mongoose from 'mongoose';
-import { JwtPayload } from 'jsonwebtoken';
+import { JwtPayload, Secret } from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { generateOtp } from '../../utils/generateOtp';
@@ -35,6 +35,10 @@ const loginUser = async (payload: IAuth) => {
 
       const jwtPayload: IJwtPayload = {
          userId: user._id as string,
+         name: user.name as string,
+         email: user.email as string,
+         hasShop: user.hasShop,
+         isActive: user.isActive,
          role: user.role,
       };
 
@@ -70,23 +74,47 @@ const loginUser = async (payload: IAuth) => {
    }
 };
 
-const refreshToken = async (refreshToken: string) => {
-   let decodedData;
+const refreshToken = async (token: string) => {
+
+   let verifiedToken = null;
    try {
-      decodedData = verifyToken(
-         refreshToken,
-         config.jwt_refresh_secret as string
+      verifiedToken = verifyToken(
+         token,
+         config.jwt_refresh_secret as Secret
       );
    } catch (err) {
-      throw new Error('You are not authorized!');
+      throw new AppError(StatusCodes.FORBIDDEN, 'Invalid Refresh Token');
    }
 
-   console.log(decodedData);
+   const { userId } = verifiedToken;
 
-   // @ more logic will go here
+   const isUserExist = await User.findById(userId);
+   if (!isUserExist) {
+      throw new AppError(StatusCodes.NOT_FOUND, 'User does not exist');
+   }
+
+   if (!isUserExist.isActive) {
+      throw new AppError(StatusCodes.BAD_REQUEST, 'User is not active');
+   }
+
+
+   const jwtPayload: IJwtPayload = {
+      userId: isUserExist._id as string,
+      name: isUserExist.name as string,
+      email: isUserExist.email as string,
+      hasShop: isUserExist.hasShop,
+      isActive: isUserExist.isActive,
+      role: isUserExist.role,
+   };
+
+   const newAccessToken = createToken(
+      jwtPayload,
+      config.jwt_access_secret as Secret,
+      config.jwt_access_expires_in as string
+   );
 
    return {
-      // accessToken,
+      accessToken: newAccessToken,
    };
 };
 

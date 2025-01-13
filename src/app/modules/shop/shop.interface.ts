@@ -1,7 +1,7 @@
 import { Schema } from "mongoose";
 
-export interface IVendor extends Document {
-  companyName: string;
+export interface IShop extends Document {
+  shopName: string;
   businessLicenseNumber: string;
   address: string;
   contactNumber: string;
@@ -14,4 +14,7 @@ export interface IVendor extends Document {
   socialMediaLinks?: Map<string, string>;
   taxIdentificationNumber: string;
   logo?: string;
+  isActive: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
 }

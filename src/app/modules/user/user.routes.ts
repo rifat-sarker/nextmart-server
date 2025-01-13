@@ -17,19 +17,10 @@ router.get(
 );
 
 router.post(
-    '/customer',
+    '/',
     clientInfoParser,
     validateRequest(UserValidation.userValidationSchema),
     UserController.registerUser
-);
-
-router.post(
-    '/vendor',
-    multerUpload.single('logo'),
-    parseBody,
-    clientInfoParser,
-    //validateRequest(UserValidation.userValidationSchema),
-    UserController.registerVendor
 );
 
 export const UserRoutes = router;

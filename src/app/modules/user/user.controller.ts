@@ -4,6 +4,7 @@ import catchAsync from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
 import { StatusCodes } from 'http-status-codes';
 import { IImageFile } from '../../interface/IImageFile';
+import config from '../../config';
 
 const registerUser = catchAsync(async (req: Request, res: Response) => {
 
@@ -11,28 +12,25 @@ const registerUser = catchAsync(async (req: Request, res: Response) => {
     req.body
   );
 
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: 'User created succesfully',
-    data: result,
+  const { refreshToken, accessToken } = result;
+
+  res.cookie('refreshToken', refreshToken, {
+    secure: config.NODE_ENV === 'production',
+    httpOnly: true,
+    sameSite: 'none',
+    maxAge: 1000 * 60 * 60 * 24 * 365,
   });
-});
-
-const registerVendor = catchAsync(async (req: Request, res: Response) => {
-
-  const result = await UserServices.registerVendor(
-    req.body,
-    req.file as IImageFile
-  );
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
-    message: 'Vendor created succesfully',
-    data: result,
+    message: 'User logged in successfully!',
+    data: {
+      accessToken,
+    },
   });
 });
+
 
 const getAllUser = catchAsync(async (req, res) => {
   const result = await UserServices.getAllUser(req.query);
@@ -48,6 +46,5 @@ const getAllUser = catchAsync(async (req, res) => {
 
 export const UserController = {
   registerUser,
-  getAllUser,
-  registerVendor
+  getAllUser
 }

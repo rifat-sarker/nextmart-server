@@ -4,15 +4,21 @@ import clientInfoParser from '../../middleware/clientInfoParser';
 import authGuard from '../../middleware/authGuard';
 import auth from '../../middleware/auth';
 import { UserRole } from '../user/user.interface';
+import validateRequest from '../../middleware/validateRequest';
+import { AuthValidation } from './auth.validation';
 
 const router = Router();
 
 router.post('/login', clientInfoParser, AuthController.loginUser);
 
-router.post('/refresh-token', AuthController.refreshToken);
+router.post(
+   '/refresh-token',
+   validateRequest(AuthValidation.refreshTokenZodSchema),
+   AuthController.refreshToken
+);
 router.post(
    '/change-password',
-   auth(UserRole.ADMIN, UserRole.VENDOR, UserRole.CUSTOMER),
+   auth(UserRole.ADMIN, UserRole.USER),
    AuthController.changePassword
 );
 

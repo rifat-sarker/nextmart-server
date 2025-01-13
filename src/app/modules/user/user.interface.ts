@@ -3,8 +3,7 @@ import { Document, Model } from 'mongoose';
 // Enum for User Roles
 export enum UserRole {
    ADMIN = 'admin',
-   VENDOR = 'vendor',
-   CUSTOMER = 'customer',
+   USER = 'user'
 }
 
 // User Schema Definition

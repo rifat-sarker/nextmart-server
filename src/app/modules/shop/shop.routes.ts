@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { vendorController } from './vendor.controller';
+
 
 const router = Router();
 
