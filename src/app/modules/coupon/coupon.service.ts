@@ -1,3 +1,4 @@
+import QueryBuilder from '../../builder/QueryBuilder';
 import { IJwtPayload } from '../auth/auth.interface';
 import { ICoupon } from './coupon.interface';
 import { Coupon } from './coupon.model';
@@ -7,10 +8,21 @@ const createCoupon = async (couponData: Partial<ICoupon>) => {
    return await coupon.save();
 };
 
-const getAllCoupon = async (couponData: Partial<ICoupon>) => {
-   const result = await Coupon.find({});
+const getAllCoupon = async (query: Record<string, unknown>) => {
+   const brandQuery = new QueryBuilder(Coupon.find(), query)
+      .search(['code'])
+      .filter()
+      .sort()
+      .paginate()
+      .fields();
 
-   return result;
+   const result = await brandQuery.modelQuery;
+   const meta = await brandQuery.countTotal();
+
+   return {
+      meta,
+      result,
+   };
 };
 
 export const CouponService = {
