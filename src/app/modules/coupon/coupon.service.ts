@@ -25,7 +25,30 @@ const getAllCoupon = async (query: Record<string, unknown>) => {
    };
 };
 
+const updateCoupon = async (payload: Partial<ICoupon>, couponCode: string) => {
+   console.log({ payload, couponCode });
+
+   const currentDate = new Date();
+
+   const updatedCoupon = await Coupon.findOneAndUpdate(
+      {
+         code: couponCode.toUpperCase(),
+         isActive: true,
+         endDate: { $gte: currentDate },
+      },
+      { $set: payload },
+      { new: true, runValidators: true }
+   );
+
+   if (!updatedCoupon) {
+      throw new Error('Coupon not found or is either inactive or expired.');
+   }
+
+   return updatedCoupon;
+};
+
 export const CouponService = {
    createCoupon,
    getAllCoupon,
+   updateCoupon,
 };
