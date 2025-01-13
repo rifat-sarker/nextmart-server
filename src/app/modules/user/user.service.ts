@@ -6,110 +6,49 @@ import QueryBuilder from '../../builder/QueryBuilder';
 import { UserSearchableFields } from './user.constant';
 import Customer from '../customer/customer.model';
 import mongoose from 'mongoose';
-import Vendor from '../vendor/vendor.model';
-import { IVendor } from '../vendor/vendor.interface';
 import { IImageFile } from '../../interface/IImageFile';
-import { ICustomer } from '../customer/customer.interface';
-import { IJwtPayload } from '../auth/auth.interface';
+import { AuthService } from '../auth/auth.service';
 
 // Function to register user
 const registerUser = async (userData: IUser) => {
-   const session = await mongoose.startSession();
-   session.startTransaction();
 
-   try {
-      if (![UserRole.CUSTOMER].includes(userData.role)) {
-         throw new AppError(
-            StatusCodes.NOT_ACCEPTABLE,
-            'Invalid role. Only Customer and Vendor are allowed.'
-         );
-      }
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-      // Check if the user already exists by email
-      const existingUser = await User.findOne({
-         email: userData.email,
-      }).session(session);
-      if (existingUser) {
-         throw new AppError(
-            StatusCodes.NOT_ACCEPTABLE,
-            'Email is already registered'
-         );
-      }
+  try {
+    if ([UserRole.ADMIN].includes(userData.role)) {
+      throw new AppError(StatusCodes.NOT_ACCEPTABLE, 'Invalid role. Only User is allowed.');
+    }
 
-      // Create the user
-      const user = new User(userData);
-      const createdUser = await user.save({ session });
+    // Check if the user already exists by email
+    const existingUser = await User.findOne({ email: userData.email }).session(session);
+    if (existingUser) {
+      throw new AppError(StatusCodes.NOT_ACCEPTABLE, 'Email is already registered');
+    }
 
-      const profile = new Customer({
-         user: createdUser._id,
-      });
+    // Create the user
+    const user = new User(userData);
+    const createdUser = await user.save({ session });
 
-      await profile.save({ session });
+    const profile = new Customer({
+      user: createdUser._id,
+    });
 
-      // Commit the transaction
-      await session.commitTransaction();
-      session.endSession();
+    await profile.save({ session });
 
-      return createdUser;
-   } catch (error) {
-      // Abort the transaction on error
-      await session.abortTransaction();
-      session.endSession();
-      throw error;
-   }
+    // Commit the transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    return await AuthService.loginUser({ email: createdUser.email, password: userData.password, clientInfo: userData.clientInfo });
+  } catch (error) {
+    // Abort the transaction on error
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
 };
 
-const registerVendor = async (
-   vendorData: IUser & { vendor: IVendor },
-   logo: IImageFile
-) => {
-   const { vendor, ...userData } = vendorData;
-
-   const session = await mongoose.startSession();
-   session.startTransaction();
-
-   try {
-      // Check if the user already exists by email
-      const existingUser = await User.findOne({
-         email: userData.email,
-      }).session(session);
-      if (existingUser) {
-         throw new AppError(
-            StatusCodes.NOT_ACCEPTABLE,
-            'Email is already registered'
-         );
-      }
-
-      // Create the user
-      const user = new User({
-         ...userData,
-         role: UserRole.VENDOR,
-      });
-      const createdUser = await user.save({ session });
-
-      if (logo) {
-         vendor.logo = logo.path;
-      }
-
-      const profile = new Vendor({
-         user: createdUser._id,
-         ...vendor,
-      });
-
-      await profile.save({ session });
-
-      // Commit the transaction
-      await session.commitTransaction();
-      session.endSession();
-
-      return createdUser;
-   } catch (error) {
-      // Abort the transaction on error
-      await session.abortTransaction();
-      session.endSession();
-      throw error;
-   }
-};
 
 const getAllUser = async (query: Record<string, unknown>) => {
    const UserQuery = new QueryBuilder(User.find(), query)

@@ -13,12 +13,11 @@ const router = Router();
 router.get('/', auth(UserRole.ADMIN), UserController.getAllUser);
 
 router.post(
-   '/customer',
-   clientInfoParser,
-   validateRequest(UserValidation.userValidationSchema),
-   UserController.registerUser
+    '/',
+    clientInfoParser,
+    validateRequest(UserValidation.userValidationSchema),
+    UserController.registerUser
 );
-
 // update profile
 router.patch(
    '/update-profile',
@@ -27,15 +26,6 @@ router.patch(
    parseBody,
    validateRequest(UserValidation.customerInfoValidationSchema),
    UserController.updateProfile
-);
-
-router.post(
-   '/vendor',
-   multerUpload.single('logo'),
-   parseBody,
-   clientInfoParser,
-   //validateRequest(UserValidation.userValidationSchema),
-   UserController.registerVendor
 );
 
 // admin =>  toggle user status

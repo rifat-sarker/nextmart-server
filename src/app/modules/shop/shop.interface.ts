@@ -1,17 +1,19 @@
 import { Schema } from "mongoose";
 
-export interface IVendor extends Document {
-  companyName: string;
+export interface IShop extends Document {
+  shopName: string;
   businessLicenseNumber: string;
   address: string;
   contactNumber: string;
   website?: string;
   user?: Schema.Types.ObjectId;
   servicesOffered: string[];
-  ratings: number;
-  isVerified: boolean;
+  ratings?: number;
   establishedYear: number;
   socialMediaLinks?: Map<string, string>;
   taxIdentificationNumber: string;
   logo?: string;
+  isActive: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
 }

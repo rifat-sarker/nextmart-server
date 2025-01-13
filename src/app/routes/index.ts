@@ -7,6 +7,7 @@ import { OrderRoutes } from '../modules/order/order.routes';
 import { CouponRoutes } from '../modules/coupon/coupon.routes';
 import { SSLRoutes } from '../modules/sslcommerz/sslcommerz.routes';
 import { BrandRoutes } from '../modules/brand/brand.routes';
+import { ShopRoutes } from '../modules/shop/shop.routes';
 const router = Router();
 
 const moduleRoutes = [
@@ -17,6 +18,10 @@ const moduleRoutes = [
     {
         path: '/auth',
         route: AuthRoutes,
+    },
+    {
+        path: '/shop',
+        route: ShopRoutes,
     },
     {
         path: '/category',

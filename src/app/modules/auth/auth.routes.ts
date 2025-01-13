@@ -3,15 +3,22 @@ import { AuthController } from './auth.controller';
 import clientInfoParser from '../../middleware/clientInfoParser';
 import auth from '../../middleware/auth';
 import { UserRole } from '../user/user.interface';
+import validateRequest from '../../middleware/validateRequest';
+import { AuthValidation } from './auth.validation';
 
 const router = Router();
 
 router.post('/login', clientInfoParser, AuthController.loginUser);
 
-router.post('/refresh-token', AuthController.refreshToken);
 router.post(
-   '/changePassword',
-   auth(UserRole.CUSTOMER, UserRole.VENDOR),
+   '/refresh-token',
+   validateRequest(AuthValidation.refreshTokenZodSchema),
+   AuthController.refreshToken
+);
+
+router.post(
+   '/change-password',
+   auth(UserRole.ADMIN, UserRole.USER),
    AuthController.changePassword
 );
 
