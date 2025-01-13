@@ -23,7 +23,7 @@ export interface IUser extends Document {
    };
    lastLogin: Date;
    isActive: boolean;
-   otpToken?: string;
+   otpToken?: string | null;
    createdAt: Date;
    updatedAt: Date;
 }

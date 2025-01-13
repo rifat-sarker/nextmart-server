@@ -12,6 +12,8 @@ const router = Router();
 
 router.get('/', auth(UserRole.ADMIN), UserController.getAllUser);
 
+router.get('/me', auth(UserRole.ADMIN, UserRole.USER), UserController.myProfile);
+
 router.post(
    '/',
    clientInfoParser,

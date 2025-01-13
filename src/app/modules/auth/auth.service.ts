@@ -188,46 +188,74 @@ const forgotPassword = async ({ email }: { email: string }) => {
    }
 };
 
+const verifyOTP = async (
+   { email, otp }: { email: string, otp: string }
+) => {
+   const user = await User.findOne({ email: email });
+
+   if (!user) {
+      throw new AppError(StatusCodes.NOT_FOUND, 'User not found');
+   }
+
+   if (!user.otpToken || user.otpToken === '') {
+      throw new AppError(
+         StatusCodes.BAD_REQUEST,
+         'No OTP token found. Please request a new password reset OTP.'
+      );
+   }
+
+   const decodedOtpData = verifyToken(
+      user.otpToken as string,
+      config.jwt_otp_secret as string
+   );
+
+   if (!decodedOtpData) {
+      throw new AppError(
+         StatusCodes.FORBIDDEN,
+         'OTP has expired or is invalid'
+      );
+   }
+
+   if (decodedOtpData.otp !== otp) {
+      throw new AppError(StatusCodes.FORBIDDEN, 'Invalid OTP');
+   }
+
+   user.otpToken = null;
+   await user.save();
+
+   const resetToken = jwt.sign({ email }, config.jwt_pass_reset_secret as string, {
+      expiresIn: config.jwt_pass_reset_expires_in,
+   });
+
+   // Return the reset token
+   return {
+      resetToken
+   };
+
+}
+
 const resetPassword = async ({
-   email,
-   otp,
+   token,
    newPassword,
 }: {
-   email: string;
-   otp: string;
+   token: string;
    newPassword: string;
 }) => {
+
    const session: ClientSession = await User.startSession();
 
    try {
       session.startTransaction();
 
-      const user = await User.findOne({ email: email }).session(session);
-      if (!user) {
-         throw new AppError(StatusCodes.NOT_FOUND, 'User not found');
-      }
-
-      if (!user.otpToken || user.otpToken === '') {
-         throw new AppError(
-            StatusCodes.BAD_REQUEST,
-            'No OTP token found. Please request a new password reset OTP.'
-         );
-      }
-
-      const decodedOtpData = verifyToken(
-         user.otpToken as string,
-         config.jwt_otp_secret as string
+      const decodedData = verifyToken(
+         token as string,
+         config.jwt_pass_reset_secret as string
       );
 
-      if (!decodedOtpData) {
-         throw new AppError(
-            StatusCodes.FORBIDDEN,
-            'OTP has expired or is invalid'
-         );
-      }
+      const user = await User.findOne({ email: decodedData.email, isActive: true }).session(session);
 
-      if (decodedOtpData.otp !== otp) {
-         throw new AppError(StatusCodes.FORBIDDEN, 'Invalid OTP');
+      if (!user) {
+         throw new AppError(StatusCodes.NOT_FOUND, 'User not found');
       }
 
       const hashedPassword = await bcrypt.hash(
@@ -235,11 +263,7 @@ const resetPassword = async ({
          Number(config.bcrypt_salt_rounds)
       );
 
-      await User.updateOne({ email }, { password: hashedPassword }).session(
-         session
-      );
-
-      await User.updateOne({ email }, { $unset: { otpToken: '' } }).session(
+      await User.updateOne({ email: user.email }, { password: hashedPassword }).session(
          session
       );
 
@@ -261,5 +285,6 @@ export const AuthService = {
    refreshToken,
    changePassword,
    forgotPassword,
+   verifyOTP,
    resetPassword,
 };

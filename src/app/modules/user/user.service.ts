@@ -68,11 +68,39 @@ const getAllUser = async (query: Record<string, unknown>) => {
    };
 };
 
+const myProfile = async (authUser: IJwtPayload) => {
+   const isUserExists = await User.findById(authUser.userId);
+   if (!isUserExists) {
+      throw new AppError(StatusCodes.NOT_FOUND, "User not found!");
+   }
+   if (!isUserExists.isActive) {
+      throw new AppError(StatusCodes.BAD_REQUEST, "User is not active!");
+   }
+
+   const profile = await Customer.findOne({ user: isUserExists._id });
+
+
+   return {
+      ...isUserExists.toObject(),
+      profile: profile || null
+   }
+
+}
+
 const updateProfile = async (
    payload: Partial<ICustomer>,
    file: IImageFile,
    authUser: IJwtPayload
 ) => {
+   const isUserExists = await User.findById(authUser.userId);
+
+   if (!isUserExists) {
+      throw new AppError(StatusCodes.NOT_FOUND, "User not found!");
+   }
+   if (!isUserExists.isActive) {
+      throw new AppError(StatusCodes.BAD_REQUEST, "User is not active!");
+   }
+
    if (file && file.path) {
       payload.photo = file.path;
    }
@@ -83,7 +111,7 @@ const updateProfile = async (
       {
          new: true,
       }
-   );
+   ).populate('user');
 
    return result;
 };
@@ -104,6 +132,7 @@ const updateUserStatus = async (userId: string) => {
 export const UserServices = {
    registerUser,
    getAllUser,
+   myProfile,
    updateUserStatus,
    updateProfile,
 };
