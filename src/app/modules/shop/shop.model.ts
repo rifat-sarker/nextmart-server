@@ -39,10 +39,6 @@ const shopSchema = new Schema<IShop>(
       min: 0,
       max: 5,
     },
-    isVerified: {
-      type: Boolean,
-      default: false,
-    },
     establishedYear: {
       type: Number,
       required: true,

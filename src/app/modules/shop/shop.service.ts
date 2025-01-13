@@ -3,6 +3,9 @@ import { IImageFile } from "../../interface/IImageFile";
 import { IShop } from "./shop.interface";
 import { IJwtPayload } from "../auth/auth.interface";
 import User from "../user/user.model";
+import AppError from "../../errors/appError";
+import { StatusCodes } from "http-status-codes";
+import Shop from "./shop.model";
 
 const createShop = async (shopData: Partial<IShop>, logo: IImageFile, authUser: IJwtPayload) => {
 
@@ -11,38 +14,45 @@ const createShop = async (shopData: Partial<IShop>, logo: IImageFile, authUser: 
 
   try {
     // Check if the user already exists by email
-    const existingUser = await User.findOne({ email: userData.email }).session(session);
-    if (existingUser) {
-      throw new AppError(StatusCodes.NOT_ACCEPTABLE, 'Email is already registered');
+    const existingUser = await User.findById(authUser.userId).session(session);
+
+    if (!existingUser) {
+      throw new AppError(StatusCodes.NOT_ACCEPTABLE, 'User is not exists!');
     }
 
-    // Create the user
-    const user = new User({
-      ...userData,
-      role: UserRole.VENDOR
-    });
-    const createdUser = await user.save({ session });
+    if (!existingUser.isActive) {
+      throw new AppError(StatusCodes.NOT_ACCEPTABLE, 'User is not active!');
+    }
 
     if (logo) {
-      vendor.logo = logo.path
+      shopData.logo = logo.path
     }
 
-    const profile = new Vendor({
-      user: createdUser._id,
-      ...vendor
+    const shop = new Shop({
+      ...shopData,
+      user: existingUser._id
     });
 
-    await profile.save({ session });
+    const createdShop = await shop.save({ session });
+
+    await User.findByIdAndUpdate(
+      existingUser._id,
+      { hasShop: true },
+      { new: true, session }
+    );
 
     // Commit the transaction
     await session.commitTransaction();
     session.endSession();
 
-    return createdUser;
+    return createdShop;
   } catch (error) {
-    // Abort the transaction on error
     await session.abortTransaction();
     session.endSession();
     throw error;
   }
 };
+
+export const ShopService = {
+  createShop
+}

@@ -8,8 +8,7 @@ export interface IShop extends Document {
   website?: string;
   user?: Schema.Types.ObjectId;
   servicesOffered: string[];
-  ratings: number;
-  isVerified: boolean;
+  ratings?: number;
   establishedYear: number;
   socialMediaLinks?: Map<string, string>;
   taxIdentificationNumber: string;
