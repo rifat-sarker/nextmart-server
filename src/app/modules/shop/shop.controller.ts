@@ -7,7 +7,6 @@ import sendResponse from '../../utils/sendResponse';
 import { StatusCodes } from 'http-status-codes';
 
 const createShop = catchAsync(async (req: Request, res: Response) => {
-  console.log(req.body)
   const result = await ShopService.createShop(
     req.body,
     req.file as IImageFile,

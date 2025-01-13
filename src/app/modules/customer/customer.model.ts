@@ -6,9 +6,9 @@ const customerSchema = new Schema<ICustomer>({
     type: String,
     validate: {
       validator: function (v: string) {
-        return /^\d{10}$/.test(v);
+        return /^\d{11}$/.test(v);
       },
-      message: 'Phone number must be 10 digits long',
+      message: 'Phone number must be 11 digits long',
     },
   },
   gender: {
@@ -17,21 +17,10 @@ const customerSchema = new Schema<ICustomer>({
     default: 'Other',
   },
   dateOfBirth: {
-    type: Date,
+    type: String,
   },
   address: {
-    home: {
-      type: String,
-    },
-    work: {
-      type: String,
-    },
-    partner: {
-      type: String,
-    },
-    other: {
-      type: String,
-    },
+    type: String
   },
   photo: {
     type: String,
