@@ -2,6 +2,8 @@ import mongoose, { Schema } from 'mongoose';
 import { IUser, UserModel, UserRole } from './user.interface';
 import bcrypt from 'bcrypt';
 import config from '../../config';
+import AppError from '../../errors/appError';
+import { StatusCodes } from 'http-status-codes';
 
 // Create the User schema based on the interface
 const userSchema = new Schema<IUser, UserModel>(
@@ -103,6 +105,20 @@ userSchema.statics.isPasswordMatched = async function (
 
 userSchema.statics.isUserExistsByEmail = async function (email: string) {
    return await User.findOne({ email }).select('+password');
+};
+
+userSchema.statics.checkUserExist = async function (userId: string) {
+   const existingUser = await this.findById(userId);
+
+   if (!existingUser) {
+      throw new AppError(StatusCodes.NOT_ACCEPTABLE, 'User does not exist!');
+   }
+
+   if (!existingUser.isActive) {
+      throw new AppError(StatusCodes.NOT_ACCEPTABLE, 'User is not active!');
+   }
+
+   return existingUser;
 };
 
 const User = mongoose.model<IUser, UserModel>('User', userSchema);

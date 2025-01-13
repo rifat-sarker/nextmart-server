@@ -15,11 +15,9 @@ const createOrder = async (orderData: Partial<IOrder>, authUser: IJwtPayload) =>
   session.startTransaction();
 
   try {
-
-    // Update stock for each product in the order
     if (orderData.products) {
       for (const productItem of orderData.products) {
-        const product = await Product.findById(productItem.product).populate('vendor').session(session);
+        const product = await Product.findById(productItem.product).populate('shop').session(session);
 
         if (product) {
           if (product.isActive === false) {
@@ -72,6 +70,7 @@ const createOrder = async (orderData: Partial<IOrder>, authUser: IJwtPayload) =>
 
     const payment = new Payment({
       user: authUser.userId,
+      shop: createdOrder.shop,
       order: createdOrder._id,
       method: orderData.paymentMethod,
       transactionId,

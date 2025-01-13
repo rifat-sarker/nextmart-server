@@ -53,6 +53,17 @@ const createShop = async (shopData: Partial<IShop>, logo: IImageFile, authUser: 
   }
 };
 
+const getMyShop = async (authUser: IJwtPayload) => {
+  const existingUser = await User.checkUserExist(authUser.userId);
+  if (!existingUser.hasShop) {
+    throw new AppError(StatusCodes.NOT_FOUND, "You have no shop!")
+  }
+
+  const shop = await Shop.findOne({ user: existingUser._id }).populate('user');
+  return shop;
+}
+
 export const ShopService = {
-  createShop
+  createShop,
+  getMyShop
 }

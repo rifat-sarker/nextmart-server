@@ -1,6 +1,5 @@
 import { Document, Types } from "mongoose";
 
-// Updated interface for Product
 export interface IProduct extends Document {
   name: string;
   slug: string;
@@ -12,10 +11,13 @@ export interface IProduct extends Document {
   category: Types.ObjectId;
   imageUrls: string[];
   isActive: boolean;
-  vendor: Types.ObjectId;
+  shop: Types.ObjectId;
   brand: Types.ObjectId;
   averageRating?: number;
   ratingCount?: number;
+  availableColors: string[];
+  specification: Record<string, any>;
+  keyFeatures: string[];
   createdAt?: Date;
   updatedAt?: Date;
 }

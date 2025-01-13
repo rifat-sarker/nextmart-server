@@ -10,6 +10,7 @@ import { log } from "console";
 import QueryBuilder from "../../builder/QueryBuilder";
 import { ProductSearchableFields } from "./product.constant";
 import { Order } from "../order/order.model";
+import Shop from "../shop/shop.model";
 
 const createProduct = async (
   productData: Partial<IProduct>,
@@ -17,36 +18,43 @@ const createProduct = async (
   authUser: IJwtPayload
 ) => {
   const { images } = productImages;
-  productData.imageUrls = images?.map((image) => image.path);
-
-  const isVendorExists = await User.findById(authUser.userId);
-
-  if (!isVendorExists) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "Vendor is not exists!");
+  if (!images || images.length === 0) {
+    throw new AppError(StatusCodes.BAD_REQUEST, 'Product images are required.');
   }
 
-  if (!isVendorExists.isActive) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "Vendor account is not active!");
+  productData.imageUrls = images.map((image) => image.path);
+
+  const isUserExists = await User.checkUserExist(authUser.userId);
+  if (!isUserExists.hasShop) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "You don't have a shop!");
+  }
+
+  const shop = await Shop.findOne({ user: isUserExists._id });
+  if (!shop) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "Shop does not exist!");
+  }
+
+  if (!shop.isActive) {
+    throw new AppError(StatusCodes.BAD_REQUEST, 'Your shop is not active!');
   }
 
   const isCategoryExists = await Category.findById(productData.category);
-
   if (!isCategoryExists) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "Category is not exists!");
+    throw new AppError(StatusCodes.BAD_REQUEST, "Category does not exist!");
   }
 
   if (!isCategoryExists.isActive) {
     throw new AppError(StatusCodes.BAD_REQUEST, "Category is not active!");
   }
 
-  const product = new Product({
+  const newProduct = new Product({
     ...productData,
-    vendor: isVendorExists._id
+    shop: shop._id,
   });
 
-  const result = await product.save();
+  const result = await newProduct.save();
   return result;
-}
+};
 
 const getAllProduct = async (query: Record<string, unknown>) => {
   const { minPrice, maxPrice, ...pQuery } = query;
@@ -56,7 +64,7 @@ const getAllProduct = async (query: Record<string, unknown>) => {
     .sort()
     .paginate()
     .fields()
-    .priceRange(Number(minPrice), Number(maxPrice));
+    .priceRange(Number(minPrice) || 0, Number(maxPrice) || Infinity);
 
   const result = await productQuery.modelQuery;
   const meta = await productQuery.countTotal();

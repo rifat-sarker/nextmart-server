@@ -60,7 +60,7 @@ const updateBrandIntoDB = async (
     throw new AppError(StatusCodes.NOT_FOUND, "Brand not found!")
   }
 
-  if ((authUser.role === UserRole.VENDOR) && (isBrandExist.createdBy.toString() !== authUser.userId)) {
+  if ((authUser.role === UserRole.USER) && (isBrandExist.createdBy.toString() !== authUser.userId)) {
     throw new AppError(StatusCodes.BAD_REQUEST, "You are not able to edit the category!")
   }
 
