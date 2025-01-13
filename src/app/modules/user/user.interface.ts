@@ -13,6 +13,7 @@ export interface IUser extends Document {
    password: string;
    name: string;
    role: UserRole;
+   hasShop: boolean;
    clientInfo: {
       device: 'pc' | 'mobile'; // Device type
       browser: string; // Browser name

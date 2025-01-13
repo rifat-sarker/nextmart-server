@@ -6,6 +6,10 @@ import config from '../../config';
 // Create the User schema based on the interface
 const userSchema = new Schema<IUser, UserModel>(
    {
+      name: {
+         type: String,
+         required: true,
+      },
       email: {
          type: String,
          required: true,
@@ -16,14 +20,14 @@ const userSchema = new Schema<IUser, UserModel>(
          type: String,
          required: true,
       },
-      name: {
-         type: String,
-         required: true,
-      },
       role: {
          type: String,
          enum: [UserRole.ADMIN, UserRole.VENDOR, UserRole.CUSTOMER],
          default: UserRole.CUSTOMER,
+      },
+      hasShop: {
+         type: Boolean,
+         default: false, // Default value is false
       },
       clientInfo: {
          device: {
@@ -40,13 +44,13 @@ const userSchema = new Schema<IUser, UserModel>(
             required: true,
          },
          pcName: {
-            type: String, // Optional field for PC name
+            type: String,
          },
          os: {
-            type: String, // Optional field for operating system name
+            type: String,
          },
          userAgent: {
-            type: String, // Optional field for user agent string
+            type: String,
          },
       },
       lastLogin: {
@@ -59,15 +63,16 @@ const userSchema = new Schema<IUser, UserModel>(
       },
       otpToken: {
          type: String,
+         default: null
       },
    },
    {
-      timestamps: true, // Automatically adds createdAt and updatedAt
+      timestamps: true,
    }
 );
 
 userSchema.pre('save', async function (next) {
-   const user = this; // doc
+   const user = this;
 
    user.password = await bcrypt.hash(
       user.password,
@@ -77,7 +82,6 @@ userSchema.pre('save', async function (next) {
    next();
 });
 
-// set '' after saving password
 userSchema.post('save', function (doc, next) {
    doc.password = '';
    next();
@@ -101,6 +105,5 @@ userSchema.statics.isUserExistsByEmail = async function (email: string) {
    return await User.findOne({ email }).select('+password');
 };
 
-// Create and export the User model
 const User = mongoose.model<IUser, UserModel>('User', userSchema);
 export default User;
