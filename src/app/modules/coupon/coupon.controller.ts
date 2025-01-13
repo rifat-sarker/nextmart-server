@@ -6,19 +6,50 @@ import sendResponse from '../../utils/sendResponse';
 import { StatusCodes } from 'http-status-codes';
 
 const createCoupon = catchAsync(async (req: Request, res: Response) => {
+   const result = await CouponService.createCoupon(req.body);
 
-  const result = await CouponService.createCoupon(
-    req.body
-  );
-
-  sendResponse(res, {
-    statusCode: StatusCodes.CREATED,
-    success: true,
-    message: 'Coupon created succesfully',
-    data: result,
-  });
+   sendResponse(res, {
+      statusCode: StatusCodes.CREATED,
+      success: true,
+      message: 'Coupon created successfully',
+      data: result,
+   });
 });
 
+const getAllCoupon = catchAsync(async (req: Request, res: Response) => {
+   const result = await CouponService.getAllCoupon(req.query);
+
+   sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: 'Coupon fetched successfully',
+      data: result,
+   });
+});
+
+// const updateCoupon = catchAsync(async (req: Request, res: Response) => {
+//    const result = await CouponService.createCoupon(req.body);
+
+//    sendResponse(res, {
+//       statusCode: StatusCodes.CREATED,
+//       success: true,
+//       message: 'Coupon created successfully',
+//       data: result,
+//    });
+// });
+
+// const deleteCoupon = catchAsync(async (req: Request, res: Response) => {
+//    const result = await CouponService.createCoupon(req.body);
+
+//    sendResponse(res, {
+//       statusCode: StatusCodes.CREATED,
+//       success: true,
+//       message: 'Coupon created successfully',
+//       data: result,
+//    });
+// });
+
 export const couponController = {
-  createCoupon
-}
+   createCoupon,
+   getAllCoupon,
+};
