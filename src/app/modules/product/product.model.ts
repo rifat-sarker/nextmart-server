@@ -35,11 +35,6 @@ const productSchema = new Schema<IProduct>(
       min: 0,
       default: null,
     },
-    offer: {
-      type: Number,
-      default: 0,
-      min: 0
-    },
     category: {
       type: Schema.Types.ObjectId,
       ref: "Category",
@@ -53,9 +48,9 @@ const productSchema = new Schema<IProduct>(
       type: Boolean,
       default: true,
     },
-    vendor: {
+    shop: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Shop",
       required: [true, "User who created the product is required"],
     },
     brand: {
@@ -73,6 +68,18 @@ const productSchema = new Schema<IProduct>(
       type: Number,
       default: 0,
       min: 0,
+    },
+    availableColors: {
+      type: [String],
+      required: [true, "Available colors are required"],
+    },
+    specification: {
+      type: Schema.Types.Mixed,
+      default: {},
+    },
+    keyFeatures: {
+      type: [String],
+      default: [],
     },
   },
   {

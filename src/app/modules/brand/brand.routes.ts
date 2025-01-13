@@ -12,7 +12,7 @@ router.get("/", BrandController.getAllBrand)
 
 router.post(
     '/',
-    auth(UserRole.ADMIN, UserRole.VENDOR),
+    auth(UserRole.ADMIN, UserRole.USER),
     multerUpload.single('logo'),
     parseBody,
     BrandController.createBrand
@@ -20,7 +20,7 @@ router.post(
 
 router.patch(
     '/:id',
-    auth(UserRole.ADMIN, UserRole.VENDOR),
+    auth(UserRole.ADMIN, UserRole.USER),
     multerUpload.single('logo'),
     parseBody,
     BrandController.updateBrand

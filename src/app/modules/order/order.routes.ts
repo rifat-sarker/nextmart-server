@@ -10,7 +10,7 @@ const router = Router();
 
 router.post(
     '/',
-    auth(UserRole.CUSTOMER),
+    auth(UserRole.USER),
     OrderController.createOrder
 )
 

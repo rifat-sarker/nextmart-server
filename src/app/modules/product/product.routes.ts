@@ -21,7 +21,7 @@ router.get(
 
 router.post(
     '/',
-    auth(UserRole.VENDOR),
+    auth(UserRole.USER),
     multerUpload.fields([{ name: 'images' }]),
     parseBody,
     validateRequest(productValidation.createProductValidationSchema),

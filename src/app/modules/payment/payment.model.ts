@@ -13,6 +13,11 @@ const paymentSchema = new Schema<IPayment>(
       ref: 'Order',
       required: true,
     },
+    shop: {
+      type: Schema.Types.ObjectId,
+      ref: 'Shop',
+      required: true,
+    },
     method: {
       type: String,
       enum: ['COD', 'Online'],

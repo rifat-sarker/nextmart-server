@@ -6,6 +6,8 @@ import { StatusCodes } from 'http-status-codes';
 import { Payment } from '../payment/payment.model';
 import { Order } from '../order/order.model';
 import mongoose from 'mongoose';
+import { generateOrderInvoicePDF } from '../../utils/generateOrderInvoicePDF';
+import { EmailHelper } from '../../utils/emailHelper';
 
 const app = express();
 
@@ -80,17 +82,15 @@ const validatePaymentService = async (tran_id: string): Promise<boolean> => {
             tran_id
         });
 
-        console.log(validationResponse.element)
+        console.log(validationResponse.element);
 
         let data;
 
         if (validationResponse.element[0].status === 'VALID' || validationResponse.element[0].status === 'VALIDATED') {
-
             data = {
                 status: 'Paid',
                 gatewayResponse: validationResponse.element[0]
             };
-
         } else if (validationResponse.element[0].status === 'INVALID_TRANSACTION') {
             data = {
                 status: 'Failed',
@@ -103,7 +103,6 @@ const validatePaymentService = async (tran_id: string): Promise<boolean> => {
             };
         }
 
-
         const updatedPayment = await Payment.findOneAndUpdate(
             { transactionId: validationResponse.element[0].tran_id },
             data,
@@ -111,7 +110,7 @@ const validatePaymentService = async (tran_id: string): Promise<boolean> => {
         );
 
         if (!updatedPayment) {
-            return false;
+            throw new Error("Payment not updated");
         }
 
         const updatedOrder = await Order.findByIdAndUpdate(
@@ -120,29 +119,55 @@ const validatePaymentService = async (tran_id: string): Promise<boolean> => {
                 paymentStatus: data.status
             },
             { new: true, session }
-        );
+        ).populate('user products.product');
 
         if (!updatedOrder) {
-            return false;
+            throw new Error("Order not updated");
         }
 
         if (data.status === 'Failed') {
-            return false;
+            throw new Error("Payment failed");
         }
 
+        // Commit transaction only if no errors occurred
         await session.commitTransaction();
         session.endSession();
+
+        console.log("email")
+
+        const pdfBuffer = await generateOrderInvoicePDF(updatedOrder);
+        const emailContent = await EmailHelper.createEmailContent(
+            //@ts-ignore
+            { userName: updatedOrder.user.name || "" },
+            'orderInvoice'
+        );
+
+        const attachment = {
+            filename: `Invoice_${updatedOrder._id}.pdf`,
+            content: pdfBuffer,
+            encoding: 'base64',
+        };
+
+        await EmailHelper.sendEmail(
+            //@ts-ignore
+            updatedOrder.user.email,
+            emailContent,
+            "Order confirmed-Payment Success!",
+            attachment
+        );
 
         return true;
 
     } catch (error) {
-        // Rollback the transaction if an error occurs
+        // Only abort the transaction if an error occurred
         await session.abortTransaction();
         session.endSession();
 
-        return false
+        console.error(error); // Log the error for debugging
+        return false;
     }
 };
+
 
 
 export const sslService = {
