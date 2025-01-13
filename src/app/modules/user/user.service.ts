@@ -8,45 +8,47 @@ import Customer from '../customer/customer.model';
 import mongoose from 'mongoose';
 import { IImageFile } from '../../interface/IImageFile';
 import { AuthService } from '../auth/auth.service';
+import { ICustomer } from '../customer/customer.interface';
+import { IJwtPayload } from '../auth/auth.interface';
 
 // Function to register user
 const registerUser = async (userData: IUser) => {
 
-  const session = await mongoose.startSession();
-  session.startTransaction();
+   const session = await mongoose.startSession();
+   session.startTransaction();
 
-  try {
-    if ([UserRole.ADMIN].includes(userData.role)) {
-      throw new AppError(StatusCodes.NOT_ACCEPTABLE, 'Invalid role. Only User is allowed.');
-    }
+   try {
+      if ([UserRole.ADMIN].includes(userData.role)) {
+         throw new AppError(StatusCodes.NOT_ACCEPTABLE, 'Invalid role. Only User is allowed.');
+      }
 
-    // Check if the user already exists by email
-    const existingUser = await User.findOne({ email: userData.email }).session(session);
-    if (existingUser) {
-      throw new AppError(StatusCodes.NOT_ACCEPTABLE, 'Email is already registered');
-    }
+      // Check if the user already exists by email
+      const existingUser = await User.findOne({ email: userData.email }).session(session);
+      if (existingUser) {
+         throw new AppError(StatusCodes.NOT_ACCEPTABLE, 'Email is already registered');
+      }
 
-    // Create the user
-    const user = new User(userData);
-    const createdUser = await user.save({ session });
+      // Create the user
+      const user = new User(userData);
+      const createdUser = await user.save({ session });
 
-    const profile = new Customer({
-      user: createdUser._id,
-    });
+      const profile = new Customer({
+         user: createdUser._id,
+      });
 
-    await profile.save({ session });
+      await profile.save({ session });
 
-    // Commit the transaction
-    await session.commitTransaction();
-    session.endSession();
+      // Commit the transaction
+      await session.commitTransaction();
+      session.endSession();
 
-    return await AuthService.loginUser({ email: createdUser.email, password: userData.password, clientInfo: userData.clientInfo });
-  } catch (error) {
-    // Abort the transaction on error
-    await session.abortTransaction();
-    session.endSession();
-    throw error;
-  }
+      return await AuthService.loginUser({ email: createdUser.email, password: userData.password, clientInfo: userData.clientInfo });
+   } catch (error) {
+      // Abort the transaction on error
+      await session.abortTransaction();
+      session.endSession();
+      throw error;
+   }
 };
 
 
@@ -102,7 +104,6 @@ const updateUserStatus = async (userId: string) => {
 export const UserServices = {
    registerUser,
    getAllUser,
-   registerVendor,
    updateUserStatus,
    updateProfile,
 };
