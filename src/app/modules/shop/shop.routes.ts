@@ -10,6 +10,12 @@ import { ShopValidation } from './shop.validation';
 
 const router = Router();
 
+router.get(
+    '/my-shop',
+    auth(UserRole.USER),
+    ShopController.getMyShop
+)
+
 router.post(
     '/',
     auth(UserRole.USER),
