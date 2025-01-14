@@ -4,7 +4,6 @@ import sendResponse from '../../utils/sendResponse';
 import catchAsync from '../../utils/catchAsync';
 import { StatusCodes } from 'http-status-codes';
 import config from '../../config';
-import { VerifiedUser } from '../../interface/user';
 
 const loginUser = catchAsync(async (req, res) => {
    const result = await AuthService.loginUser(req.body);
@@ -35,7 +34,7 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
    sendResponse(res, {
       statusCode: 200,
       success: true,
-      message: 'User logged in successfully !',
+      message: 'User logged in successfully!',
       data: result,
    });
 });
