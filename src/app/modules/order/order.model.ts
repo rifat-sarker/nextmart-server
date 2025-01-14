@@ -29,6 +29,10 @@ const orderSchema = new Schema<IOrder>(
           required: true,
           min: 1,
         },
+        unitPrice: {
+          type: Number,
+          required: true
+        },
         color: {
           type: String,
           required: true
@@ -96,17 +100,25 @@ orderSchema.pre('validate', async function (next) {
   // Step 2: Calculate total amount for products
   for (let item of order.products) {
     const product = await Product.findById(item.product).populate('shop');
-
     if (!product) {
       return next(new Error(`Product not found!.`));
     }
     if (shopId && String(shopId) !== String(product.shop._id)) {
       return next(new Error('Products must be from the same shop.'));
     }
+
+    const offerPrice = await product?.offerPrice;
+
     //@ts-ignore
     shopId = product.shop._id;
 
-    const price = product.price * item.quantity;
+    let productPrice = product.price;
+    console.log("offer price::: ", offerPrice);
+    if (offerPrice) productPrice = Number(offerPrice);
+
+    item.unitPrice = productPrice;
+    const price = productPrice * item.quantity;
+    console.log(price)
     totalAmount += price;
   }
 

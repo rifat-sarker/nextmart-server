@@ -75,7 +75,7 @@ export const generateOrderInvoicePDF = async (order: IOrder): Promise<Buffer> =>
                 const productName = item.product?.name || 'Unknown Product';
                 const quantity = item.quantity;
                 //@ts-ignore
-                const price = item.product?.price || 0;
+                const price = item.unitPrice * quantity || 0;
 
                 doc.fontSize(11).fillColor('#000000').text(productName, 50, currentY, { width: 130, align: 'left' });
                 doc.text(quantity.toString(), 280, currentY, { width: 90, align: 'center' });

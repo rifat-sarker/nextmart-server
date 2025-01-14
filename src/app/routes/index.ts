@@ -9,6 +9,7 @@ import { SSLRoutes } from '../modules/sslcommerz/sslcommerz.routes';
 import { BrandRoutes } from '../modules/brand/brand.routes';
 import { ShopRoutes } from '../modules/shop/shop.routes';
 import { ReviewRoutes } from '../modules/review/review.routes';
+import { FlashSaleRoutes } from '../modules/flashSell/flashSale.routes';
 const router = Router();
 
 const moduleRoutes = [
@@ -35,6 +36,10 @@ const moduleRoutes = [
    {
       path: '/product',
       route: ProductRoutes,
+   },
+   {
+      path: '/flash-sale',
+      route: FlashSaleRoutes,
    },
    {
       path: '/order',

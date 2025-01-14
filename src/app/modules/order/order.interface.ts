@@ -3,6 +3,7 @@ import { Types, Document } from 'mongoose';
 export interface IOrderProduct {
   product: Types.ObjectId;
   quantity: number;
+  unitPrice: number;
   color: string;
 }
 

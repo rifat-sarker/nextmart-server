@@ -7,7 +7,7 @@ export interface IProduct extends Document {
   price: number;
   stock: number;
   weight: number | null;
-  offer: number;
+  offerPrice?: number;
   category: Types.ObjectId;
   imageUrls: string[];
   isActive: boolean;
