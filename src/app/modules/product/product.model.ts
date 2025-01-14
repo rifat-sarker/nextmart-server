@@ -1,5 +1,6 @@
 import { Schema, model, Document, Types } from "mongoose";
 import { IProduct } from "./product.interface";
+import { FlashSale } from "../flashSell/flashSale.model";
 
 const productSchema = new Schema<IProduct>(
   {
@@ -94,6 +95,40 @@ productSchema.pre<IProduct>("validate", function (next) {
   }
   next();
 });
+
+// Virtual for offerPrice
+productSchema.virtual("offerPrice").get(async function () {
+  const now = new Date();
+
+  // Fetch active flash sales
+  const flashSale = await FlashSale.findOne({
+    "products.productId": this._id, // Check if product is part of the flash sale
+    isActive: true,
+    startDate: { $lte: now },
+    endDate: { $gte: now },
+  });
+
+  // If flash sale exists, calculate offer price
+  if (flashSale) {
+    const productSale = flashSale.products.find(
+      //@ts-ignore
+      (p) => p.productId.toString() === this._id.toString()
+    );
+
+    if (productSale) {
+      const discount = (this.price * productSale.discountPercentage) / 100;
+      console.log((this.price - discount).toFixed(2))
+      return (this.price - discount).toFixed(2);
+    }
+  }
+
+  return null;
+});
+
+
+// Ensure virtual fields are included in JSON and object output
+productSchema.set("toJSON", { virtuals: true });
+productSchema.set("toObject", { virtuals: true });
 
 // Create the Product model
 export const Product = model<IProduct>("Product", productSchema);
