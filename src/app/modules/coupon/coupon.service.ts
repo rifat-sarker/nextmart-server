@@ -51,7 +51,7 @@ const updateCoupon = async (payload: Partial<ICoupon>, couponCode: string) => {
    return updatedCoupon;
 };
 
-const getCouponById = async (orderAmount: number, couponCode: string) => {
+const getCouponByCode = async (orderAmount: number, couponCode: string) => {
    const currentDate = new Date();
 
    const coupon = await Coupon.findOne({ code: couponCode });
@@ -95,6 +95,6 @@ export const CouponService = {
    createCoupon,
    getAllCoupon,
    updateCoupon,
-   getCouponById,
+   getCouponByCode,
    deleteCoupon,
 };

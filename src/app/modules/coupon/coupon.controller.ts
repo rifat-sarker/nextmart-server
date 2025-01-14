@@ -39,11 +39,11 @@ const updateCoupon = catchAsync(async (req: Request, res: Response) => {
    });
 });
 
-const getCouponById = catchAsync(async (req: Request, res: Response) => {
+const getCouponByCode = catchAsync(async (req: Request, res: Response) => {
    const { couponCode } = req.params;
-   const { totalPrice } = req.body;
+   const { orderAmount } = req.body;
 
-   const result = await CouponService.getCouponById(totalPrice, couponCode);
+   const result = await CouponService.getCouponByCode(orderAmount, couponCode);
 
    sendResponse(res, {
       statusCode: StatusCodes.OK,
@@ -69,6 +69,6 @@ export const couponController = {
    createCoupon,
    getAllCoupon,
    updateCoupon,
-   getCouponById,
+   getCouponByCode,
    deleteCoupon,
 };
