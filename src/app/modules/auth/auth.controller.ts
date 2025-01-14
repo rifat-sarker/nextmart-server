@@ -35,7 +35,7 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
    sendResponse(res, {
       statusCode: 200,
       success: true,
-      message: 'User logged in successfully !',
+      message: 'User logged in successfully!',
       data: result,
    });
 });
