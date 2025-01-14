@@ -39,19 +39,22 @@ const updateCoupon = catchAsync(async (req: Request, res: Response) => {
    });
 });
 
-// const deleteCoupon = catchAsync(async (req: Request, res: Response) => {
-//    const result = await CouponService.createCoupon(req.body);
+const getCouponById = catchAsync(async (req: Request, res: Response) => {
+   const couponCode = req.params.couponCode;
 
-//    sendResponse(res, {
-//       statusCode: StatusCodes.CREATED,
-//       success: true,
-//       message: 'Coupon created successfully',
-//       data: result,
-//    });
-// });
+   const result = await CouponService.getCouponById(couponCode);
+
+   sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: 'Coupon fetched successfully',
+      data: result,
+   });
+});
 
 export const couponController = {
    createCoupon,
    getAllCoupon,
    updateCoupon,
+   getCouponById,
 };

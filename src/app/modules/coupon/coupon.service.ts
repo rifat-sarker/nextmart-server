@@ -25,6 +25,7 @@ const getAllCoupon = async (query: Record<string, unknown>) => {
    };
 };
 
+// need to improve
 const updateCoupon = async (payload: Partial<ICoupon>, couponCode: string) => {
    console.log({ payload, couponCode });
 
@@ -47,8 +48,29 @@ const updateCoupon = async (payload: Partial<ICoupon>, couponCode: string) => {
    return updatedCoupon;
 };
 
+const getCouponById = async (couponCode: string) => {
+   const currentDate = new Date();
+
+   const coupon = await Coupon.findOne({ code: couponCode });
+
+   if (!coupon) {
+      throw new Error('Coupon not found.');
+   }
+
+   if (!coupon.isActive) {
+      throw new Error('Coupon is inactive.');
+   }
+
+   if (coupon.endDate < currentDate) {
+      throw new Error('Coupon has expired.');
+   }
+
+   return coupon;
+};
+
 export const CouponService = {
    createCoupon,
    getAllCoupon,
    updateCoupon,
+   getCouponById,
 };
