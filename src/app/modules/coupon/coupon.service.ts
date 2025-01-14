@@ -1,7 +1,9 @@
+import { StatusCodes } from 'http-status-codes';
 import QueryBuilder from '../../builder/QueryBuilder';
-import { IJwtPayload } from '../auth/auth.interface';
+import AppError from '../../errors/appError';
 import { ICoupon } from './coupon.interface';
 import { Coupon } from './coupon.model';
+import { calculateDiscount } from './coupon.utils';
 
 const createCoupon = async (couponData: Partial<ICoupon>) => {
    const coupon = new Coupon(couponData);
@@ -30,25 +32,69 @@ const updateCoupon = async (payload: Partial<ICoupon>, couponCode: string) => {
 
    const currentDate = new Date();
 
-   const updatedCoupon = await Coupon.findOneAndUpdate(
-      {
-         code: couponCode.toUpperCase(),
-         isActive: true,
-         endDate: { $gte: currentDate },
-      },
+   const coupon = await Coupon.findOne({ code: couponCode });
+
+   if (!coupon) {
+      throw new AppError(StatusCodes.NOT_FOUND, 'Coupon not found.');
+   }
+
+   if (coupon.endDate < currentDate) {
+      throw new AppError(StatusCodes.BAD_REQUEST, 'Coupon has expired.');
+   }
+
+   const updatedCoupon = await Coupon.findByIdAndUpdate(
+      coupon._id,
       { $set: payload },
       { new: true, runValidators: true }
    );
 
-   if (!updatedCoupon) {
-      throw new Error('Coupon not found or is either inactive or expired.');
+   return updatedCoupon;
+};
+
+const getCouponByCode = async (orderAmount: number, couponCode: string) => {
+   const currentDate = new Date();
+
+   const coupon = await Coupon.findOne({ code: couponCode });
+
+   if (!coupon) {
+      throw new AppError(StatusCodes.NOT_FOUND, 'Coupon not found.');
    }
 
-   return updatedCoupon;
+   if (!coupon.isActive) {
+      throw new AppError(StatusCodes.BAD_REQUEST, 'Coupon is inactive.');
+   }
+
+   if (coupon.endDate < currentDate) {
+      throw new AppError(StatusCodes.BAD_REQUEST, 'Coupon has expired.');
+   }
+
+   if (orderAmount < coupon.minOrderAmount) {
+      throw new AppError(StatusCodes.BAD_REQUEST, 'Below Minimum order amount');
+   }
+
+   const discountAmount = calculateDiscount(coupon, orderAmount);
+
+   const discountedPrice = orderAmount - discountAmount;
+
+   return { coupon, discountedPrice };
+};
+
+const deleteCoupon = async (couponId: string) => {
+   const coupon = await Coupon.findById(couponId);
+
+   if (!coupon) {
+      throw new AppError(StatusCodes.NOT_FOUND, 'Coupon not found.');
+   }
+
+   await Coupon.updateOne({ _id: coupon._id }, { isDeleted: true });
+
+   return { message: 'Coupon deleted successfully.' };
 };
 
 export const CouponService = {
    createCoupon,
    getAllCoupon,
    updateCoupon,
+   getCouponByCode,
+   deleteCoupon,
 };
