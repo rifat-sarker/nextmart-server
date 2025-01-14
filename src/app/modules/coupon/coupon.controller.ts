@@ -28,7 +28,7 @@ const getAllCoupon = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateCoupon = catchAsync(async (req: Request, res: Response) => {
-   const couponCode = req.params.couponCode;
+   const { couponCode } = req.params;
    const result = await CouponService.updateCoupon(req.body, couponCode);
 
    sendResponse(res, {
@@ -40,9 +40,10 @@ const updateCoupon = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getCouponById = catchAsync(async (req: Request, res: Response) => {
-   const couponCode = req.params.couponCode;
+   const { couponCode } = req.params;
+   const { totalPrice } = req.body;
 
-   const result = await CouponService.getCouponById(couponCode);
+   const result = await CouponService.getCouponById(totalPrice, couponCode);
 
    sendResponse(res, {
       statusCode: StatusCodes.OK,
@@ -51,10 +52,23 @@ const getCouponById = catchAsync(async (req: Request, res: Response) => {
       data: result,
    });
 });
+const deleteCoupon = catchAsync(async (req: Request, res: Response) => {
+   const { couponId } = req.params;
+
+   const result = await CouponService.deleteCoupon(couponId);
+
+   res.status(StatusCodes.OK).json({
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: result.message,
+      data: null,
+   });
+});
 
 export const couponController = {
    createCoupon,
    getAllCoupon,
    updateCoupon,
    getCouponById,
+   deleteCoupon,
 };

@@ -19,10 +19,16 @@ router.patch(
    couponController.updateCoupon
 );
 
-router.get(
+router.post(
    '/:couponCode',
    auth(UserRole.ADMIN, UserRole.USER), // Ensure only authorized users can fetch the coupon
    couponController.getCouponById
+);
+
+router.delete(
+   '/:couponId',
+   auth(UserRole.ADMIN),
+   couponController.deleteCoupon
 );
 
 export const CouponRoutes = router;
