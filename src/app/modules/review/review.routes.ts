@@ -7,4 +7,6 @@ const router = Router();
 
 router.post('/', auth(UserRole.USER), ReviewControllers.createReview);
 
+router.get('/', auth(UserRole.ADMIN), ReviewControllers.getAllReviews);
+
 export const ReviewRoutes = router;
