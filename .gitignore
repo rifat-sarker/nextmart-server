@@ -47,3 +47,5 @@ coverage/
 # Test output
 .nyc_output/
 
+.vercel
+
