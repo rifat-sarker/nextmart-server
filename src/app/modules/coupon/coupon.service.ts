@@ -68,6 +68,10 @@ const getCouponByCode = async (orderAmount: number, couponCode: string) => {
       throw new AppError(StatusCodes.BAD_REQUEST, 'Coupon has expired.');
    }
 
+   if (coupon.startDate > currentDate) {
+      throw new AppError(StatusCodes.BAD_REQUEST, 'Coupon has not started.');
+   }
+
    if (orderAmount < coupon.minOrderAmount) {
       throw new AppError(StatusCodes.BAD_REQUEST, 'Below Minimum order amount');
    }
