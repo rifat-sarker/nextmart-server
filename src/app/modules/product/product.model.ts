@@ -107,19 +107,16 @@ productSchema.virtual('reviews', {
    foreignField: 'product',
 });
 
-// Virtual for offerPrice
 productSchema.virtual('offerPrice').get(async function () {
    const now = new Date();
 
-   // Fetch active flash sales
    const flashSale = await FlashSale.findOne({
-      'products.productId': this._id, // Check if product is part of the flash sale
+      'products.productId': this._id,
       isActive: true,
       startDate: { $lte: now },
       endDate: { $gte: now },
    });
 
-   // If flash sale exists, calculate offer price
    if (flashSale) {
       const productSale = flashSale.products.find(
          //@ts-ignore
@@ -136,9 +133,7 @@ productSchema.virtual('offerPrice').get(async function () {
    return null;
 });
 
-// Ensure virtual fields are included in JSON and object output
 productSchema.set('toJSON', { virtuals: true });
 productSchema.set('toObject', { virtuals: true });
 
-// Create the Product model
 export const Product = model<IProduct>('Product', productSchema);
