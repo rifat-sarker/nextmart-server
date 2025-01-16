@@ -1,5 +1,6 @@
 import { Schema, model } from 'mongoose';
 import { IReview } from './review.interface'; // Assuming you have a file for the interface
+import { Product } from '../product/product.model';
 
 const reviewSchema = new Schema<IReview>(
    {
@@ -41,5 +42,33 @@ const reviewSchema = new Schema<IReview>(
       timestamps: true,
    }
 );
+
+const updateProductRatings = async (productId: string) => {
+   const reviews = await Review.aggregate([
+      { $match: { product: productId } },
+      {
+         $group: {
+            _id: null,
+            averageRating: { $avg: '$rating' },
+            ratingCount: { $sum: 1 },
+         },
+      },
+   ]);
+
+   const { averageRating = 0, ratingCount = 0 } = reviews[0] || {};
+
+   await Product.findByIdAndUpdate(productId, {
+      averageRating,
+      ratingCount,
+   });
+};
+
+reviewSchema.post('save', async function (doc) {
+   await updateProductRatings(doc.product.toString());
+});
+
+reviewSchema.post('findOneAndDelete', async function (doc) {
+   await updateProductRatings(doc.product.toString());
+});
 
 export const Review = model<IReview>('Review', reviewSchema);
