@@ -1,4 +1,4 @@
-import { Schema, model } from 'mongoose';
+import { ObjectId, Schema, model } from 'mongoose';
 import { IReview } from './review.interface'; // Assuming you have a file for the interface
 import { Product } from '../product/product.model';
 
@@ -43,7 +43,8 @@ const reviewSchema = new Schema<IReview>(
    }
 );
 
-const updateProductRatings = async (productId: string) => {
+const updateProductRatings = async (productId: ObjectId) => {
+   console.log({ productId });
    const reviews = await Review.aggregate([
       { $match: { product: productId } },
       {
@@ -55,6 +56,8 @@ const updateProductRatings = async (productId: string) => {
       },
    ]);
 
+   console.log(reviews);
+
    const { averageRating = 0, ratingCount = 0 } = reviews[0] || {};
 
    await Product.findByIdAndUpdate(productId, {
@@ -64,11 +67,12 @@ const updateProductRatings = async (productId: string) => {
 };
 
 reviewSchema.post('save', async function (doc) {
-   await updateProductRatings(doc.product.toString());
+   console.log(doc);
+   await updateProductRatings(doc.product);
 });
 
 reviewSchema.post('findOneAndDelete', async function (doc) {
-   await updateProductRatings(doc.product.toString());
+   await updateProductRatings(doc.product);
 });
 
 export const Review = model<IReview>('Review', reviewSchema);
