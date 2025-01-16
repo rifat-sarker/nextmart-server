@@ -157,7 +157,7 @@ const getAllProduct = async (query: Record<string, unknown>) => {
    const productsWithOfferPrice = await Promise.all(
       products.map(async (product) => {
          const productDoc = await Product.findById(product._id);
-         const offerPrice = await productDoc?.offerPrice;
+         const offerPrice = productDoc?.offerPrice;
          return {
             ...product,
             offerPrice: Number(offerPrice) || null,
