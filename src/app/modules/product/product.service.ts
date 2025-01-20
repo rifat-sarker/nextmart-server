@@ -10,6 +10,7 @@ import QueryBuilder from '../../builder/QueryBuilder';
 import { ProductSearchableFields } from './product.constant';
 import { Order } from '../order/order.model';
 import Shop from '../shop/shop.model';
+import { IOrderProduct } from '../order/order.interface';
 
 const createProduct = async (
    productData: Partial<IProduct>,
@@ -288,9 +289,20 @@ const getSingleProduct = async (productId: string) => {
    return product;
 };
 
+const updateProduct = async (
+   productId: string,
+   payload: Partial<IProduct>,
+   productImages: IImageFiles,
+   authUser: IJwtPayload
+) => {
+   console.log({ productId, payload, productImages, authUser });
+   await Product.findByIdAndUpdate();
+};
+
 export const ProductService = {
    createProduct,
    getAllProduct,
    getTrendingProducts,
    getSingleProduct,
+   updateProduct,
 };
