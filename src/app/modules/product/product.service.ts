@@ -277,8 +277,20 @@ const getTrendingProducts = async (limit: number) => {
 //    return trendingProducts;
 // };
 
+const getSingleProduct = async (productId: string) => {
+   const product = await Product.findById(productId);
+   if (!product) {
+      throw new AppError(StatusCodes.NOT_FOUND, 'Product not Found');
+   }
+   if (!product.isActive) {
+      throw new AppError(StatusCodes.BAD_REQUEST, 'Product is not active');
+   }
+   return product;
+};
+
 export const ProductService = {
    createProduct,
    getAllProduct,
    getTrendingProducts,
+   getSingleProduct,
 };
