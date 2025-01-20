@@ -22,4 +22,14 @@ router.post(
    ProductController.createProduct
 );
 
+router.get('/:productId', ProductController.getSingleProduct);
+
+router.patch(
+   '/:productId',
+   auth(UserRole.USER),
+   multerUpload.fields([{ name: 'images' }]),
+   parseBody,
+   ProductController.updateProduct
+);
+
 export const ProductRoutes = router;

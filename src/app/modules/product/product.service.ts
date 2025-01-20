@@ -10,6 +10,7 @@ import QueryBuilder from '../../builder/QueryBuilder';
 import { ProductSearchableFields } from './product.constant';
 import { Order } from '../order/order.model';
 import Shop from '../shop/shop.model';
+import { IOrderProduct } from '../order/order.interface';
 
 const createProduct = async (
    productData: Partial<IProduct>,
@@ -277,8 +278,58 @@ const getTrendingProducts = async (limit: number) => {
 //    return trendingProducts;
 // };
 
+const getSingleProduct = async (productId: string) => {
+   const product = await Product.findById(productId);
+   if (!product) {
+      throw new AppError(StatusCodes.NOT_FOUND, 'Product not Found');
+   }
+   if (!product.isActive) {
+      throw new AppError(StatusCodes.BAD_REQUEST, 'Product is not active');
+   }
+   return product;
+};
+
+const updateProduct = async (
+   productId: string,
+   payload: Partial<IProduct>,
+   productImages: IImageFiles,
+   authUser: IJwtPayload
+) => {
+   console.dir(productImages, { depth: 0 });
+   const { images } = productImages;
+
+   const user = await User.findById(authUser.userId);
+   const shop = await Shop.findOne({ user: user?._id });
+   const product = await Product.findOne({
+      shop: shop?._id,
+   });
+
+   if (!user?.isActive) {
+      throw new AppError(StatusCodes.BAD_REQUEST, 'User is not active');
+   }
+   if (!shop) {
+      throw new AppError(StatusCodes.BAD_REQUEST, "You don't have a shop");
+   }
+   if (!shop.isActive) {
+      throw new AppError(StatusCodes.BAD_REQUEST, 'Your shop is inactive');
+   }
+   if (!product) {
+      throw new AppError(StatusCodes.NOT_FOUND, 'Product Not Found');
+   }
+
+   console.log({ user, shop });
+
+   if (images && images.length > 0) {
+      payload.imageUrls = images.map((image) => image.path);
+   }
+
+   return await Product.findByIdAndUpdate(product._id, payload, { new: true });
+};
+
 export const ProductService = {
    createProduct,
    getAllProduct,
    getTrendingProducts,
+   getSingleProduct,
+   updateProduct,
 };
