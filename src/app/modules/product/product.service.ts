@@ -295,13 +295,13 @@ const updateProduct = async (
    productImages: IImageFiles,
    authUser: IJwtPayload
 ) => {
-   console.dir(productImages, { depth: 0 });
    const { images } = productImages;
 
    const user = await User.findById(authUser.userId);
    const shop = await Shop.findOne({ user: user?._id });
    const product = await Product.findOne({
       shop: shop?._id,
+      _id: productId,
    });
 
    if (!user?.isActive) {
@@ -317,13 +317,32 @@ const updateProduct = async (
       throw new AppError(StatusCodes.NOT_FOUND, 'Product Not Found');
    }
 
-   console.log({ user, shop });
-
    if (images && images.length > 0) {
       payload.imageUrls = images.map((image) => image.path);
    }
 
-   return await Product.findByIdAndUpdate(product._id, payload, { new: true });
+   return await Product.findByIdAndUpdate(productId, payload, { new: true });
+};
+
+const deleteProduct = async (productId: string, authUser: IJwtPayload) => {
+   const user = await User.findById(authUser.userId);
+   const shop = await Shop.findOne({ user: user?._id });
+   const product = await Product.findOne({
+      shop: shop?._id,
+      _id: productId,
+   });
+
+   if (!user?.isActive) {
+      throw new AppError(StatusCodes.BAD_REQUEST, 'User is not active');
+   }
+   if (!shop) {
+      throw new AppError(StatusCodes.BAD_REQUEST, "You don't have a shop");
+   }
+   if (!product) {
+      throw new AppError(StatusCodes.NOT_FOUND, 'Product Not Found');
+   }
+
+   return await Product.findByIdAndDelete(productId);
 };
 
 export const ProductService = {
@@ -332,4 +351,5 @@ export const ProductService = {
    getTrendingProducts,
    getSingleProduct,
    updateProduct,
+   deleteProduct,
 };
