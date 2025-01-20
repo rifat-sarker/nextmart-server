@@ -27,7 +27,7 @@ const getAllBrand = catchAsync(async (req, res) => {
    sendResponse(res, {
       statusCode: StatusCodes.OK,
       success: true,
-      message: 'Brand are retrieved successfully',
+      message: 'Brands are retrieved successfully',
       meta: result.meta,
       data: result.result,
    });
