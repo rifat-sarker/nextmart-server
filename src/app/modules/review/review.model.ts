@@ -43,7 +43,7 @@ const reviewSchema = new Schema<IReview>(
    }
 );
 
-const updateProductRatings = async (productId: ObjectId) => {
+export const updateProductRatings = async (productId: ObjectId) => {
    console.log({ productId });
    const reviews = await Review.aggregate([
       { $match: { product: productId } },
@@ -68,10 +68,7 @@ const updateProductRatings = async (productId: ObjectId) => {
 
 reviewSchema.post('save', async function (doc) {
    console.log(doc);
-   await updateProductRatings(doc.product);
-});
 
-reviewSchema.post('findOneAndDelete', async function (doc) {
    await updateProductRatings(doc.product);
 });
 

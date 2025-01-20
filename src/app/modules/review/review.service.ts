@@ -1,7 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import { IReview } from './review.interface';
-import { Review } from './review.model';
-import { IJwtPayload } from '../auth/auth.interface';
+import { Review, updateProductRatings } from './review.model';
 import { JwtPayload } from 'jsonwebtoken';
 import AppError from '../../errors/appError';
 import QueryBuilder from '../../builder/QueryBuilder';
@@ -21,6 +20,7 @@ export const createReview = async (payload: IReview, user: JwtPayload) => {
    }
 
    const review = await Review.create({ ...payload, user: user.userId });
+   await updateProductRatings(review.product);
    return review;
 };
 
