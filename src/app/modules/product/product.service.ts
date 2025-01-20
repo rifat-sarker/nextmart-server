@@ -141,7 +141,7 @@ const getAllProduct = async (query: Record<string, unknown>) => {
    const productQuery = new QueryBuilder(
       Product.find()
          .populate('category', 'name')
-         .populate('shop', 'name')
+         .populate('shop', 'shopName')
          .populate('brand', 'name'),
       pQuery
    )
