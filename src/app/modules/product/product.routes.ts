@@ -13,6 +13,8 @@ router.get('/', ProductController.getAllProduct);
 
 router.get('/trending', ProductController.getTrendingProducts);
 
+router.get('/:productId', ProductController.getSingleProduct);
+
 router.post(
    '/',
    auth(UserRole.USER),
@@ -21,8 +23,6 @@ router.post(
    validateRequest(productValidation.createProductValidationSchema),
    ProductController.createProduct
 );
-
-router.get('/:productId', ProductController.getSingleProduct);
 
 router.patch(
    '/:productId',
