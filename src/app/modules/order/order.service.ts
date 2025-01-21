@@ -9,6 +9,11 @@ import { generateTransactionId } from "../payment/payment.utils"
 import { sslService } from "../sslcommerz/sslcommerz.service"
 import { generateOrderInvoicePDF } from "../../utils/generateOrderInvoicePDF"
 import { EmailHelper } from "../../utils/emailHelper"
+import User from "../user/user.model"
+import AppError from "../../errors/appError"
+import { StatusCodes } from "http-status-codes"
+import Shop from "../shop/shop.model"
+import QueryBuilder from "../../builder/QueryBuilder"
 
 const createOrder = async (orderData: Partial<IOrder>, authUser: IJwtPayload) => {
   const session = await mongoose.startSession();
@@ -125,6 +130,100 @@ const createOrder = async (orderData: Partial<IOrder>, authUser: IJwtPayload) =>
   }
 };
 
+const getMyShopOrders = async (query: Record<string, unknown>, authUser: IJwtPayload) => {
+  const userHasShop = await User.findById(authUser.userId).select('isActive hasShop');
+
+  if (!userHasShop) throw new AppError(StatusCodes.NOT_FOUND, "User not found!");
+  if (!userHasShop.isActive) throw new AppError(StatusCodes.BAD_REQUEST, "User account is not active!");
+  if (!userHasShop.hasShop) throw new AppError(StatusCodes.BAD_REQUEST, "User does not have any shop!");
+
+  const shopIsActive = await Shop.findOne({
+    user: userHasShop._id,
+    isActive: true
+  }).select("isActive");
+
+  if (!shopIsActive) throw new AppError(StatusCodes.BAD_REQUEST, "Shop is not active!");
+
+  const orderQuery = new QueryBuilder(
+    Order.find({ shop: shopIsActive._id })
+      .populate('user products.product coupon'),
+    query
+  )
+    .search(['user.name', 'user.email', 'products.product.name'])
+    .filter()
+    .sort()
+    .paginate()
+    .fields()
+
+  const result = await orderQuery.modelQuery;
+
+  const meta = await orderQuery.countTotal();
+
+  return {
+    meta,
+    result,
+  };
+};
+
+const getOrderDetails = async (orderId: string) => {
+  const order = await Order.findById(orderId).populate("user products.product coupon");
+  if (!order) {
+    throw new AppError(StatusCodes.NOT_FOUND, 'Order not Found');
+  }
+
+  order.payment = await Payment.findOne({ order: order._id });
+  return order;
+};
+
+const getMyOrders = async (query: Record<string, unknown>, authUser: IJwtPayload) => {
+
+  const orderQuery = new QueryBuilder(
+    Order.find({ user: authUser.userId })
+      .populate('user products.product coupon'),
+    query
+  )
+    .search(['user.name', 'user.email', 'products.product.name'])
+    .filter()
+    .sort()
+    .paginate()
+    .fields()
+
+  const result = await orderQuery.modelQuery;
+
+  const meta = await orderQuery.countTotal();
+
+  return {
+    meta,
+    result,
+  };
+};
+
+const changeOrderStatus = async (orderId: string, status: string, authUser: IJwtPayload) => {
+  const userHasShop = await User.findById(authUser.userId).select('isActive hasShop');
+
+  if (!userHasShop) throw new AppError(StatusCodes.NOT_FOUND, "User not found!");
+  if (!userHasShop.isActive) throw new AppError(StatusCodes.BAD_REQUEST, "User account is not active!");
+  if (!userHasShop.hasShop) throw new AppError(StatusCodes.BAD_REQUEST, "User does not have any shop!");
+
+  const shopIsActive = await Shop.findOne({
+    user: userHasShop._id,
+    isActive: true
+  }).select("isActive");
+
+  if (!shopIsActive) throw new AppError(StatusCodes.BAD_REQUEST, "Shop is not active!");
+
+  const order = await Order.findOneAndUpdate(
+    { _id: new Types.ObjectId(orderId), shop: shopIsActive._id },
+    { status },
+    { new: true }
+  );
+  return order;
+};
+
 export const OrderService = {
-  createOrder
+  createOrder,
+  getMyShopOrders,
+  getOrderDetails,
+  getMyOrders,
+  changeOrderStatus
 }

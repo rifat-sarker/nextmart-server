@@ -19,6 +19,70 @@ const createOrder = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getMyShopOrders = catchAsync(async (req: Request, res: Response) => {
+  const result = await OrderService.getMyShopOrders(
+    req.query,
+    req.user as IJwtPayload
+  );
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Order retrive succesfully',
+    data: result.result,
+    meta: result.meta
+  });
+});
+
+const getOrderDetails = catchAsync(async (req: Request, res: Response) => {
+  const result = await OrderService.getOrderDetails(
+    req.params.orderId
+  );
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Order retrive succesfully',
+    data: result
+  });
+});
+
+const getMyOrders = catchAsync(async (req: Request, res: Response) => {
+  const result = await OrderService.getMyOrders(
+    req.query,
+    req.user as IJwtPayload
+  );
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Order retrive succesfully',
+    data: result.result,
+    meta: result.meta
+  });
+});
+
+
+const changeOrderStatus = catchAsync(async (req: Request, res: Response) => {
+  const { status } = req.body;
+  const result = await OrderService.changeOrderStatus(
+    req.params.orderId,
+    status,
+    req.user as IJwtPayload
+  );
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Order status changed succesfully',
+    data: result
+  });
+});
+
 export const OrderController = {
-  createOrder
+  createOrder,
+  getMyShopOrders,
+  getOrderDetails,
+  getMyOrders,
+  changeOrderStatus
 }
