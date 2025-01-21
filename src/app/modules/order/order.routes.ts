@@ -30,4 +30,10 @@ router.post(
     OrderController.createOrder
 )
 
+router.patch(
+    '/:orderId/status',
+    auth(UserRole.USER),
+    OrderController.changeOrderStatus
+)
+
 export const OrderRoutes = router;

@@ -62,9 +62,27 @@ const getMyOrders = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+
+const changeOrderStatus = catchAsync(async (req: Request, res: Response) => {
+  const { status } = req.body;
+  const result = await OrderService.changeOrderStatus(
+    req.params.orderId,
+    status,
+    req.user as IJwtPayload
+  );
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Order status changed succesfully',
+    data: result
+  });
+});
+
 export const OrderController = {
   createOrder,
   getMyShopOrders,
   getOrderDetails,
-  getMyOrders
+  getMyOrders,
+  changeOrderStatus
 }

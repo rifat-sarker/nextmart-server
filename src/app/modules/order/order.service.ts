@@ -197,9 +197,33 @@ const getMyOrders = async (query: Record<string, unknown>, authUser: IJwtPayload
     result,
   };
 };
+
+const changeOrderStatus = async (orderId: string, status: string, authUser: IJwtPayload) => {
+  const userHasShop = await User.findById(authUser.userId).select('isActive hasShop');
+
+  if (!userHasShop) throw new AppError(StatusCodes.NOT_FOUND, "User not found!");
+  if (!userHasShop.isActive) throw new AppError(StatusCodes.BAD_REQUEST, "User account is not active!");
+  if (!userHasShop.hasShop) throw new AppError(StatusCodes.BAD_REQUEST, "User does not have any shop!");
+
+  const shopIsActive = await Shop.findOne({
+    user: userHasShop._id,
+    isActive: true
+  }).select("isActive");
+
+  if (!shopIsActive) throw new AppError(StatusCodes.BAD_REQUEST, "Shop is not active!");
+
+  const order = await Order.findOneAndUpdate(
+    { _id: new Types.ObjectId(orderId), shop: shopIsActive._id },
+    { status },
+    { new: true }
+  );
+  return order;
+};
+
 export const OrderService = {
   createOrder,
   getMyShopOrders,
   getOrderDetails,
-  getMyOrders
+  getMyOrders,
+  changeOrderStatus
 }
