@@ -20,4 +20,5 @@ export interface IProduct extends Document {
   keyFeatures: string[];
   createdAt?: Date;
   updatedAt?: Date;
+  reviews?: Record<string, any> | [];
 }

@@ -11,6 +11,7 @@ import { ProductSearchableFields } from './product.constant';
 import { Order } from '../order/order.model';
 import Shop from '../shop/shop.model';
 import { IOrderProduct } from '../order/order.interface';
+import { Review } from '../review/review.model';
 
 const createProduct = async (
    productData: Partial<IProduct>,
@@ -286,6 +287,7 @@ const getSingleProduct = async (productId: string) => {
    if (!product.isActive) {
       throw new AppError(StatusCodes.BAD_REQUEST, 'Product is not active');
    }
+   product.reviews = await Review.find({ product: product._id });
    return product;
 };
 
