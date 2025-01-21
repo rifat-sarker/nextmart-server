@@ -56,6 +56,18 @@ const getSingleProduct = catchAsync(async (req, res) => {
    });
 });
 
+const getMyShopProducts = catchAsync(async (req, res) => {
+   const result = await ProductService.getMyShopProducts(req.query, req.user as IJwtPayload);
+
+   sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: 'Products are retrieved successfully',
+      meta: result.meta,
+      data: result.result,
+   });
+});
+
 const updateProduct = catchAsync(async (req, res) => {
    const {
       user,
@@ -105,4 +117,5 @@ export const ProductController = {
    getSingleProduct,
    updateProduct,
    deleteProduct,
+   getMyShopProducts
 };
