@@ -5,9 +5,15 @@ import { UserRole } from '../user/user.interface';
 
 const router = Router();
 
-router.post('/', auth(UserRole.USER), ReviewControllers.createReview);
-
-router.get('/', auth(UserRole.ADMIN), ReviewControllers.getAllReviews);
-router.delete('/:reviewId', () => {});
+router.get(
+    '/',
+    auth(UserRole.ADMIN),
+    ReviewControllers.getAllReviews
+);
+router.post(
+    '/',
+    auth(UserRole.USER),
+    ReviewControllers.createReview
+);
 
 export const ReviewRoutes = router;

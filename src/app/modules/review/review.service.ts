@@ -4,11 +4,11 @@ import { Review } from './review.model';
 import { JwtPayload } from 'jsonwebtoken';
 import AppError from '../../errors/appError';
 import QueryBuilder from '../../builder/QueryBuilder';
-import mongoose, { ObjectId } from 'mongoose';
+import mongoose from 'mongoose';
 import { Product } from '../product/product.model';
 
 //@ need to fix
-export const createReview = async (payload: IReview, user: JwtPayload) => {
+const createReview = async (payload: IReview, user: JwtPayload) => {
    const session = await mongoose.startSession();
 
    try {
@@ -34,8 +34,6 @@ export const createReview = async (payload: IReview, user: JwtPayload) => {
          session,
       });
 
-      console.log(review);
-
       // Aggregate reviews for the product
       const reviews = await Review.aggregate([
          {
@@ -51,8 +49,6 @@ export const createReview = async (payload: IReview, user: JwtPayload) => {
             },
          },
       ]);
-
-      console.log({ reviews });
 
       const { averageRating = 0, ratingCount = 0 } = reviews[0] || {};
 
@@ -72,7 +68,6 @@ export const createReview = async (payload: IReview, user: JwtPayload) => {
       await session.commitTransaction();
       return review;
    } catch (err) {
-      console.error('Transaction error:', err);
       await session.abortTransaction();
       throw err;
    } finally {
@@ -80,7 +75,7 @@ export const createReview = async (payload: IReview, user: JwtPayload) => {
    }
 };
 
-export const getAllReviews = async (query: Record<string, unknown>) => {
+const getAllReviews = async (query: Record<string, unknown>) => {
    const brandQuery = new QueryBuilder(
       Review.find().populate('product user'),
       query
