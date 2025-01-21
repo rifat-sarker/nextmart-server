@@ -168,7 +168,18 @@ const getMyShopOrders = async (query: Record<string, unknown>, authUser: IJwtPay
   };
 };
 
+const getOrderDetails = async (orderId: string) => {
+  const order = await Order.findById(orderId).populate("user products.product coupon");
+  if (!order) {
+    throw new AppError(StatusCodes.NOT_FOUND, 'Order not Found');
+  }
+
+  order.payment = await Payment.findOne({ order: order._id });
+  return order;
+};
+
 export const OrderService = {
   createOrder,
-  getMyShopOrders
+  getMyShopOrders,
+  getOrderDetails
 }
