@@ -144,21 +144,18 @@ const getMyShopOrders = async (query: Record<string, unknown>, authUser: IJwtPay
 
   if (!shopIsActive) throw new AppError(StatusCodes.BAD_REQUEST, "Shop is not active!");
 
-  const { minPrice, maxPrice, ...pQuery } = query;
-
   const orderQuery = new QueryBuilder(
     Order.find({ shop: shopIsActive._id })
       .populate('user products.product coupon'),
-    pQuery
+    query
   )
     .search(['user.name', 'user.email', 'products.product.name'])
     .filter()
     .sort()
     .paginate()
     .fields()
-    .priceRange(Number(minPrice) || 0, Number(maxPrice) || Infinity);
 
-  const result = await orderQuery.modelQuery.lean();
+  const result = await orderQuery.modelQuery;
 
   const meta = await orderQuery.countTotal();
 
@@ -178,8 +175,31 @@ const getOrderDetails = async (orderId: string) => {
   return order;
 };
 
+const getMyOrders = async (query: Record<string, unknown>, authUser: IJwtPayload) => {
+
+  const orderQuery = new QueryBuilder(
+    Order.find({ user: authUser.userId })
+      .populate('user products.product coupon'),
+    query
+  )
+    .search(['user.name', 'user.email', 'products.product.name'])
+    .filter()
+    .sort()
+    .paginate()
+    .fields()
+
+  const result = await orderQuery.modelQuery;
+
+  const meta = await orderQuery.countTotal();
+
+  return {
+    meta,
+    result,
+  };
+};
 export const OrderService = {
   createOrder,
   getMyShopOrders,
-  getOrderDetails
+  getOrderDetails,
+  getMyOrders
 }

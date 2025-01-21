@@ -13,6 +13,12 @@ router.get(
 );
 
 router.get(
+    '/my-orders',
+    auth(UserRole.USER),
+    OrderController.getMyOrders
+);
+
+router.get(
     '/:orderId',
     auth(UserRole.USER),
     OrderController.getOrderDetails
