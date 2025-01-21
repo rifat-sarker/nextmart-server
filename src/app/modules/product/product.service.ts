@@ -279,7 +279,7 @@ const getTrendingProducts = async (limit: number) => {
 // };
 
 const getSingleProduct = async (productId: string) => {
-   const product = await Product.findById(productId);
+   const product = await Product.findById(productId).populate("shop brand category");
    if (!product) {
       throw new AppError(StatusCodes.NOT_FOUND, 'Product not Found');
    }

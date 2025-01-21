@@ -8,7 +8,6 @@ let server: Server | null = null;
 // Database connection
 async function connectToDatabase() {
    try {
-      console.log({ db_url: process.env.DB_URL });
       await mongoose.connect(config.db_url as string);
       console.log('🛢 Database connected successfully');
    } catch (err) {
