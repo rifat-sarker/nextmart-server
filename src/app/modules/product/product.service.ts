@@ -60,83 +60,6 @@ const createProduct = async (
    return result;
 };
 
-// const getAllProduct = async (query: Record<string, unknown>) => {
-//   const { minPrice, maxPrice, ...pQuery } = query;
-//   const productQuery = new QueryBuilder(Product.find().populate('category shop brand'), pQuery)
-//     .search(ProductSearchableFields)
-//     .filter()
-//     .sort()
-//     .paginate()
-//     .fields()
-//     .priceRange(Number(minPrice) || 0, Number(maxPrice) || Infinity);
-
-//   const products = await Product.aggregate([
-//     {
-//       $match: productQuery.modelQuery,  // Use the query built by QueryBuilder
-//     },
-//     {
-//       $lookup: {
-//         from: "flashsales", // Join with FlashSale collection to calculate offer price
-//         let: { productId: "$_id" },
-//         pipeline: [
-//           { $match: { $expr: { $in: ["$$productId", "$products.productId"] }, isActive: true } },
-//           { $unwind: "$products" },
-//           { $match: { $expr: { $eq: ["$$productId", "$products.productId"] } } },
-//           {
-//             $project: {
-//               discountPercentage: "$products.discountPercentage",
-//             },
-//           },
-//         ],
-//         as: "flashSale",
-//       },
-//     },
-//     {
-//       $addFields: {
-//         offerPrice: {
-//           $cond: {
-//             if: { $gt: [{ $size: "$flashSale" }, 0] },
-//             then: {
-//               $subtract: [
-//                 "$price",
-//                 { $multiply: [{ $arrayElemAt: ["$flashSale.discountPercentage", 0] }, 0.01] },
-//               ],
-//             },
-//             else: "$price",
-//           },
-//         },
-//       },
-//     },
-//     {
-//       $project: {
-//         name: 1,
-//         slug: 1,
-//         price: 1,
-//         stock: 1,
-//         offerPrice: 1,
-//         category: 1,
-//         shop: 1,
-//         brand: 1,
-//         imageUrls: 1,
-//         isActive: 1,
-//         averageRating: 1,
-//         ratingCount: 1,
-//         availableColors: 1,
-//         specification: 1,
-//         keyFeatures: 1,
-//       },
-//     },
-//   ]);
-
-//   // Step 3: Return paginated results with meta data
-//   const totalCount = await Product.countDocuments(productQuery.modelQuery);
-
-//   return {
-//     meta: { totalCount },
-//     result: products,
-//   };
-// }
-
 const getAllProduct = async (query: Record<string, unknown>) => {
    const { minPrice, maxPrice, ...pQuery } = query;
 
@@ -227,58 +150,6 @@ const getTrendingProducts = async (limit: number) => {
    return trendingProducts;
 };
 
-// const getTrendingProducts = async (limit: number) => {
-//    const now = new Date();
-//    const last30Days = new Date(now.setDate(now.getDate() - 30));
-
-//    const trendingProducts = await Order.aggregate([
-//       {
-//          $match: {
-//             createdAt: { $gte: last30Days },
-//          },
-//       },
-//       {
-//          $unwind: '$products',
-//       },
-//       {
-//          $group: {
-//             _id: '$products.product',
-//             orderCount: { $sum: '$products.quantity' },
-//          },
-//       },
-//       {
-//          $sort: { orderCount: -1 },
-//       },
-//       {
-//          $limit: limit || 10,
-//       },
-//       {
-//          $lookup: {
-//             from: 'products',
-//             localField: '_id',
-//             foreignField: '_id',
-//             as: 'productDetails',
-//          },
-//       },
-//       {
-//          $unwind: '$productDetails',
-//       },
-//       {
-//          $project: {
-//             _id: 0,
-//             productId: '$_id',
-//             orderCount: 1,
-//             name: '$productDetails.name',
-//             price: '$productDetails.price',
-//             offer: '$productDetails.offer',
-//             imageUrls: '$productDetails.imageUrls',
-//          },
-//       },
-//    ]);
-
-//    return trendingProducts;
-// };
-
 const getSingleProduct = async (productId: string) => {
    const product = await Product.findById(productId).populate("shop brand category");
    if (!product) {
@@ -289,6 +160,57 @@ const getSingleProduct = async (productId: string) => {
    }
    product.reviews = await Review.find({ product: product._id });
    return product;
+};
+
+const getMyShopProducts = async (query: Record<string, unknown>, authUser: IJwtPayload) => {
+   const userHasShop = await User.findById(authUser.userId).select('isActive hasShop');
+
+   if (!userHasShop) throw new AppError(StatusCodes.NOT_FOUND, "User not found!");
+   if (!userHasShop.isActive) throw new AppError(StatusCodes.BAD_REQUEST, "User account is not active!");
+   if (!userHasShop.hasShop) throw new AppError(StatusCodes.BAD_REQUEST, "User does not have any shop!");
+
+   const shopIsActive = await Shop.findOne({
+      user: userHasShop._id,
+      isActive: true
+   }).select("isActive");
+
+   if (!shopIsActive) throw new AppError(StatusCodes.BAD_REQUEST, "Shop is not active!");
+
+   const { minPrice, maxPrice, ...pQuery } = query;
+
+   const productQuery = new QueryBuilder(
+      Product.find({ shop: shopIsActive._id })
+         .populate('category', 'name')
+         .populate('shop', 'shopName')
+         .populate('brand', 'name'),
+      pQuery
+   )
+      .search(['name', 'description'])
+      .filter()
+      .sort()
+      .paginate()
+      .fields()
+      .priceRange(Number(minPrice) || 0, Number(maxPrice) || Infinity);
+
+   const products = await productQuery.modelQuery.lean();
+
+   const productsWithOfferPrice = await Promise.all(
+      products.map(async (product) => {
+         const productDoc = await Product.findById(product._id);
+         const offerPrice = productDoc?.offerPrice;
+         return {
+            ...product,
+            offerPrice: Number(offerPrice) || null,
+         };
+      })
+   );
+
+   const meta = await productQuery.countTotal();
+
+   return {
+      meta,
+      result: productsWithOfferPrice,
+   };
 };
 
 const updateProduct = async (
@@ -354,4 +276,5 @@ export const ProductService = {
    getSingleProduct,
    updateProduct,
    deleteProduct,
+   getMyShopProducts
 };
