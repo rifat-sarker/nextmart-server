@@ -9,6 +9,11 @@ import { generateTransactionId } from "../payment/payment.utils"
 import { sslService } from "../sslcommerz/sslcommerz.service"
 import { generateOrderInvoicePDF } from "../../utils/generateOrderInvoicePDF"
 import { EmailHelper } from "../../utils/emailHelper"
+import User from "../user/user.model"
+import AppError from "../../errors/appError"
+import { StatusCodes } from "http-status-codes"
+import Shop from "../shop/shop.model"
+import QueryBuilder from "../../builder/QueryBuilder"
 
 const createOrder = async (orderData: Partial<IOrder>, authUser: IJwtPayload) => {
   const session = await mongoose.startSession();
@@ -125,6 +130,45 @@ const createOrder = async (orderData: Partial<IOrder>, authUser: IJwtPayload) =>
   }
 };
 
+const getMyShopOrders = async (query: Record<string, unknown>, authUser: IJwtPayload) => {
+  const userHasShop = await User.findById(authUser.userId).select('isActive hasShop');
+
+  if (!userHasShop) throw new AppError(StatusCodes.NOT_FOUND, "User not found!");
+  if (!userHasShop.isActive) throw new AppError(StatusCodes.BAD_REQUEST, "User account is not active!");
+  if (!userHasShop.hasShop) throw new AppError(StatusCodes.BAD_REQUEST, "User does not have any shop!");
+
+  const shopIsActive = await Shop.findOne({
+    user: userHasShop._id,
+    isActive: true
+  }).select("isActive");
+
+  if (!shopIsActive) throw new AppError(StatusCodes.BAD_REQUEST, "Shop is not active!");
+
+  const { minPrice, maxPrice, ...pQuery } = query;
+
+  const orderQuery = new QueryBuilder(
+    Order.find({ shop: shopIsActive._id })
+      .populate('user products.product coupon'),
+    pQuery
+  )
+    .search(['user.name', 'user.email', 'products.product.name'])
+    .filter()
+    .sort()
+    .paginate()
+    .fields()
+    .priceRange(Number(minPrice) || 0, Number(maxPrice) || Infinity);
+
+  const result = await orderQuery.modelQuery.lean();
+
+  const meta = await orderQuery.countTotal();
+
+  return {
+    meta,
+    result,
+  };
+};
+
 export const OrderService = {
-  createOrder
+  createOrder,
+  getMyShopOrders
 }

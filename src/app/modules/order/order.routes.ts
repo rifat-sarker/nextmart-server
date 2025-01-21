@@ -6,7 +6,11 @@ import { UserRole } from '../user/user.interface';
 const router = Router();
 
 // Define routes
-// router.get('/', orderController.getAll);
+router.get(
+    '/my-shop-orders',
+    auth(UserRole.USER),
+    OrderController.getMyShopOrders
+);
 
 router.post(
     '/',
