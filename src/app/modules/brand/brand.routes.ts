@@ -26,4 +26,10 @@ router.patch(
     BrandController.updateBrand
 )
 
+router.delete(
+    '/:id',
+    auth(UserRole.ADMIN, UserRole.USER),
+    BrandController.deleteBrand
+)
+
 export const BrandRoutes = router;

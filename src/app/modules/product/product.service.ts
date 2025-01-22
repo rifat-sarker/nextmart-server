@@ -12,12 +12,17 @@ import { Order } from '../order/order.model';
 import Shop from '../shop/shop.model';
 import { IOrderProduct } from '../order/order.interface';
 import { Review } from '../review/review.model';
+import { FlashSale } from '../flashSell/flashSale.model';
+import { off } from 'process';
+import { hasActiveShop } from '../../utils/hasActiveShop';
 
 const createProduct = async (
    productData: Partial<IProduct>,
    productImages: IImageFiles,
    authUser: IJwtPayload
 ) => {
+   const shop = await hasActiveShop(authUser.userId);
+
    const { images } = productImages;
    if (!images || images.length === 0) {
       throw new AppError(
@@ -27,20 +32,6 @@ const createProduct = async (
    }
 
    productData.imageUrls = images.map((image) => image.path);
-
-   const isUserExists = await User.checkUserExist(authUser.userId);
-   if (!isUserExists.hasShop) {
-      throw new AppError(StatusCodes.BAD_REQUEST, "You don't have a shop!");
-   }
-
-   const shop = await Shop.findOne({ user: isUserExists._id });
-   if (!shop) {
-      throw new AppError(StatusCodes.BAD_REQUEST, 'Shop does not exist!');
-   }
-
-   if (!shop.isActive) {
-      throw new AppError(StatusCodes.BAD_REQUEST, 'Your shop is not active!');
-   }
 
    const isCategoryExists = await Category.findById(productData.category);
    if (!isCategoryExists) {
@@ -79,24 +70,38 @@ const getAllProduct = async (query: Record<string, unknown>) => {
 
    const products = await productQuery.modelQuery.lean();
 
-   const productsWithOfferPrice = await Promise.all(
-      products.map(async (product) => {
-         const productDoc = await Product.findById(product._id);
-         const offerPrice = productDoc?.offerPrice;
-         return {
-            ...product,
-            offerPrice: Number(offerPrice) || null,
-         };
-      })
-   );
-
    const meta = await productQuery.countTotal();
+
+   const productIds = products.map((product: any) => product._id);
+
+   const flashSales = await FlashSale.find({
+      product: { $in: productIds },
+      discountPercentage: { $gt: 0 },
+   }).select('product discountPercentage');
+
+   const flashSaleMap = flashSales.reduce((acc, { product, discountPercentage }) => {
+      //@ts-ignore
+      acc[product.toString()] = discountPercentage;
+      return acc;
+   }, {});
+
+   const updatedProducts = products.map((product: any) => {
+      //@ts-ignore
+      const discountPercentage = flashSaleMap[product._id.toString()];
+      if (discountPercentage) {
+         product.offerPrice = product.price * (1 - discountPercentage / 100);
+      } else {
+         product.offerPrice = null;
+      }
+      return product;
+   });
 
    return {
       meta,
-      result: productsWithOfferPrice,
+      result: updatedProducts,
    };
 };
+
 
 const getTrendingProducts = async (limit: number) => {
    const now = new Date();
@@ -151,16 +156,31 @@ const getTrendingProducts = async (limit: number) => {
 };
 
 const getSingleProduct = async (productId: string) => {
-   const product = await Product.findById(productId).populate("shop brand category");
+   const product = await Product.findById(productId)
+      .populate("shop brand category");
+
    if (!product) {
-      throw new AppError(StatusCodes.NOT_FOUND, 'Product not Found');
+      throw new AppError(StatusCodes.NOT_FOUND, 'Product not found');
    }
+
    if (!product.isActive) {
       throw new AppError(StatusCodes.BAD_REQUEST, 'Product is not active');
    }
-   product.reviews = await Review.find({ product: product._id });
-   return product;
+
+   const offerPrice = await product.calculateOfferPrice();
+   const reviews = await Review.find({ product: product._id });
+
+   const productObj = product.toObject();
+
+   return {
+      ...productObj,
+      offerPrice,
+      reviews
+   };
 };
+
+
+
 
 const getMyShopProducts = async (query: Record<string, unknown>, authUser: IJwtPayload) => {
    const userHasShop = await User.findById(authUser.userId).select('isActive hasShop');

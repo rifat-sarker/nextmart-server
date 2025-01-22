@@ -5,11 +5,11 @@ import { UserRole } from '../user/user.interface';
 
 const router = Router();
 
-router.get('/active', FlashSaleController.getActiveFlashSalesService)
+router.get('/', FlashSaleController.getActiveFlashSalesService)
 
 router.post(
     '/',
-    auth(UserRole.USER, UserRole.ADMIN),
+    auth(UserRole.USER),
     FlashSaleController.createFlashSale
 )
 

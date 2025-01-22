@@ -100,6 +100,7 @@ orderSchema.pre('validate', async function (next) {
   // Step 2: Calculate total amount for products
   for (let item of order.products) {
     const product = await Product.findById(item.product).populate('shop');
+
     if (!product) {
       return next(new Error(`Product not found!.`));
     }
@@ -107,13 +108,12 @@ orderSchema.pre('validate', async function (next) {
       return next(new Error('Products must be from the same shop.'));
     }
 
-    const offerPrice = await product?.offerPrice;
-
     //@ts-ignore
     shopId = product.shop._id;
 
+    const offerPrice = await product?.calculateOfferPrice() || 0;
+
     let productPrice = product.price;
-    console.log("offer price::: ", offerPrice);
     if (offerPrice) productPrice = Number(offerPrice);
 
     item.unitPrice = productPrice;
@@ -122,11 +122,9 @@ orderSchema.pre('validate', async function (next) {
     totalAmount += price;
   }
 
-  // Step 3: Apply coupon discount (if any)
   if (order.coupon) {
     const couponDetails = await Coupon.findById(order.coupon);
     if (couponDetails && couponDetails.isActive) {
-      // Check if coupon is applicable based on order amount
       if (totalAmount >= couponDetails.minOrderAmount) {
         if (couponDetails.discountType === 'Percentage') {
           finalDiscount = Math.min((couponDetails.discountValue / 100) * totalAmount, couponDetails.maxDiscountAmount ? couponDetails.maxDiscountAmount : Infinity);
@@ -137,11 +135,9 @@ orderSchema.pre('validate', async function (next) {
     }
   }
 
-  // Step 4: Calculate delivery charge based on shipping address
   const isDhaka = order.shippingAddress.toLowerCase().includes('dhaka');
   const deliveryCharge = isDhaka ? 60 : 120;
 
-  // Step 5: Calculate final amount
   order.totalAmount = totalAmount;
   order.discount = finalDiscount;
   order.deliveryCharge = deliveryCharge;
@@ -152,5 +148,4 @@ orderSchema.pre('validate', async function (next) {
   next();
 });
 
-// Create the Order model
 export const Order = model<IOrder>('Order', orderSchema);

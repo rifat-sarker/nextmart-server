@@ -7,7 +7,7 @@ export interface IProduct extends Document {
   price: number;
   stock: number;
   weight: number | null;
-  offerPrice?: number;
+  offerPrice?: number | null;
   category: Types.ObjectId;
   imageUrls: string[];
   isActive: boolean;
@@ -21,4 +21,6 @@ export interface IProduct extends Document {
   createdAt?: Date;
   updatedAt?: Date;
   reviews?: Record<string, any> | [];
+
+  calculateOfferPrice(): Promise<number | null>;
 }
