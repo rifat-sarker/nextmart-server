@@ -6,8 +6,8 @@ import { StatusCodes } from 'http-status-codes';
 import router from './app/routes';
 import globalErrorHandler from './app/middleware/globalErrorHandler';
 import notFound from './app/middleware/notFound';
-import seedAdmin from './app/DB/seed';
-import { sslService } from './app/modules/sslcommerz/sslcommerz.service';
+// import seedAdmin from './app/DB/seed';
+// import { sslService } from './app/modules/sslcommerz/sslcommerz.service';
 
 
 const app: Application = express();
