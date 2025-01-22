@@ -3,7 +3,7 @@ import { IFlashSale } from "./flashSale.interface";
 
 const flashSaleSchema = new Schema<IFlashSale>(
   {
-    productId: {
+    product: {
       type: Schema.Types.ObjectId,
       ref: "Product",
       required: [true, "Product ID is required"],

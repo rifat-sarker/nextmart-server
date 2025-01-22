@@ -12,6 +12,7 @@ import { Order } from '../order/order.model';
 import Shop from '../shop/shop.model';
 import { IOrderProduct } from '../order/order.interface';
 import { Review } from '../review/review.model';
+import { FlashSale } from '../flashSell/flashSale.model';
 
 const createProduct = async (
    productData: Partial<IProduct>,
@@ -79,24 +80,38 @@ const getAllProduct = async (query: Record<string, unknown>) => {
 
    const products = await productQuery.modelQuery.lean();
 
-   const productsWithOfferPrice = await Promise.all(
-      products.map(async (product) => {
-         const productDoc = await Product.findById(product._id);
-         const offerPrice = productDoc?.offerPrice;
-         return {
-            ...product,
-            offerPrice: Number(offerPrice) || null,
-         };
-      })
-   );
-
    const meta = await productQuery.countTotal();
+
+   const productIds = products.map((product: any) => product._id);
+
+   const flashSales = await FlashSale.find({
+      product: { $in: productIds },
+      discountPercentage: { $gt: 0 },
+   }).select('product discountPercentage');
+
+   const flashSaleMap = flashSales.reduce((acc, { product, discountPercentage }) => {
+      //@ts-ignore
+      acc[product.toString()] = discountPercentage;
+      return acc;
+   }, {});
+
+   const updatedProducts = products.map((product: any) => {
+      //@ts-ignore
+      const discountPercentage = flashSaleMap[product._id.toString()];
+      if (discountPercentage) {
+         product.offerPrice = product.price * (1 - discountPercentage / 100);
+      } else {
+         product.offerPrice = null;
+      }
+      return product;
+   });
 
    return {
       meta,
-      result: productsWithOfferPrice,
+      result: updatedProducts,
    };
 };
+
 
 const getTrendingProducts = async (limit: number) => {
    const now = new Date();
@@ -151,16 +166,33 @@ const getTrendingProducts = async (limit: number) => {
 };
 
 const getSingleProduct = async (productId: string) => {
-   const product = await Product.findById(productId).populate("shop brand category");
+   const product = await Product.findById(productId)
+      .populate("shop brand category")
+      .lean();
+
    if (!product) {
       throw new AppError(StatusCodes.NOT_FOUND, 'Product not Found');
    }
+
    if (!product.isActive) {
       throw new AppError(StatusCodes.BAD_REQUEST, 'Product is not active');
    }
-   product.reviews = await Review.find({ product: product._id });
+
+   const flashSale = await FlashSale.findOne({ product: productId }).select('discountPercentage');
+
+   if (flashSale) {
+      const discount = (flashSale.discountPercentage / 100) * product.price;
+      product.offerPrice = product.price - discount;
+   } else {
+      product.offerPrice = null;
+   }
+
+   const reviews = await Review.find({ product: product._id }).lean();
+   product.reviews = reviews;
+
    return product;
 };
+
 
 const getMyShopProducts = async (query: Record<string, unknown>, authUser: IJwtPayload) => {
    const userHasShop = await User.findById(authUser.userId).select('isActive hasShop');

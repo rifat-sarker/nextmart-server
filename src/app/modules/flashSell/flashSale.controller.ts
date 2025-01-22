@@ -28,7 +28,8 @@ const getActiveFlashSalesService = catchAsync(async (req: Request, res: Response
     statusCode: StatusCodes.OK,
     success: true,
     message: 'Flash Sale created succesfully',
-    data: result,
+    meta: result.meta,
+    data: result.result
   });
 });
 
