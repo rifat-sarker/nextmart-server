@@ -10,6 +10,7 @@ import { BrandRoutes } from '../modules/brand/brand.routes';
 import { ShopRoutes } from '../modules/shop/shop.routes';
 import { ReviewRoutes } from '../modules/review/review.routes';
 import { FlashSaleRoutes } from '../modules/flashSell/flashSale.routes';
+import { MetaRoutes } from '../modules/meta/meta.route';
 const router = Router();
 
 const moduleRoutes = [
@@ -56,6 +57,10 @@ const moduleRoutes = [
    {
       path: '/review',
       route: ReviewRoutes,
+   },
+   {
+      path: '/meta',
+      route: MetaRoutes,
    },
 ];
 
