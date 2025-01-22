@@ -5,6 +5,7 @@ import { ICreateFlashSaleInput, IFlashSale } from "./flashSale.interface";
 import { FlashSale } from "./flashSale.model";
 import User from "../user/user.model";
 import Shop from "../shop/shop.model";
+import QueryBuilder from "../../builder/QueryBuilder";
 
 
 const createFlashSale = async (flashSellData: ICreateFlashSaleInput, authUser: IJwtPayload) => {
@@ -24,12 +25,12 @@ const createFlashSale = async (flashSellData: ICreateFlashSaleInput, authUser: I
   const { products, discountPercentage } = flashSellData;
   const createdBy = authUser.userId;
 
-  const operations = products.map((productId) => ({
+  const operations = products.map((product) => ({
     updateOne: {
-      filter: { productId },
+      filter: { product },
       update: {
         $setOnInsert: {
-          productId,
+          product,
           discountPercentage,
           createdBy,
         },
@@ -43,103 +44,38 @@ const createFlashSale = async (flashSellData: ICreateFlashSaleInput, authUser: I
 };
 
 
-interface IGetFlashSalesParams {
-  page: number;
-  limit: number;
-  sortBy: string;
-  sortOrder: 'asc' | 'desc';
-  minDiscount?: number;
-  maxDiscount?: number;
-}
+const getActiveFlashSalesService = async (query: Record<string, unknown>) => {
+  const { minPrice, maxPrice, ...pQuery } = query;
 
-const getActiveFlashSalesService = async (params: Partial<IGetFlashSalesParams>) => {
-  let { page = 1, limit = 10, sortBy = "discountPercentage", sortOrder = "desc", minDiscount, maxDiscount } = params;
+  const productQuery = new QueryBuilder(
+    FlashSale.find()
+      .populate('product'),
+    query
+  )
+    .paginate()
 
-  // Ensure valid numbers for pagination
-  page = Number(page);
-  limit = Number(limit);
 
-  const skip = (page - 1) * limit;
+  const result = await productQuery.modelQuery;
 
-  const query: any = {
-    startDate: { $lte: new Date() },
-    endDate: { $gte: new Date() },
-    isActive: true,
+  // const productsWithOfferPrice = await Promise.all(
+  //   products.map(async (product) => {
+  //     const productDoc = await Product.findById(product._id);
+  //     const offerPrice = productDoc?.offerPrice;
+  //     return {
+  //       ...product,
+  //       offerPrice: Number(offerPrice) || null,
+  //     };
+  //   })
+  // );
+
+  const meta = await productQuery.countTotal();
+
+  return {
+    meta,
+    result
   };
-
-  if (minDiscount !== undefined) {
-    query["products.discountPercentage"] = { $gte: minDiscount };
-  }
-
-  if (maxDiscount !== undefined) {
-    query["products.discountPercentage"] = { $lte: maxDiscount };
-  }
-
-  const flashSales = await FlashSale.aggregate([
-    {
-      $match: query,
-    },
-    {
-      $unwind: "$products",
-    },
-    {
-      $lookup: {
-        from: "products",
-        localField: "products.productId",
-        foreignField: "_id",
-        as: "productDetails",
-      },
-    },
-    {
-      $unwind: "$productDetails",
-    },
-    {
-      $project: {
-        name: 1,
-        "productDetails.name": 1,
-        "productDetails.price": 1,
-        "productDetails.offerPrice": {
-          $round: [
-            {
-              $subtract: [
-                "$productDetails.price",
-                {
-                  $multiply: [
-                    "$productDetails.price",
-                    { $divide: ["$products.discountPercentage", 100] },
-                  ],
-                },
-              ],
-            },
-            2, // Round to 2 decimal places
-          ],
-        },
-        "productDetails._id": 1,
-        "productDetails.shop": 1,
-        "productDetails.stock": 1,
-        "productDetails.ratingCount": 1,
-        "productDetails.averageRating": 1,
-        "productDetails.brand": 1,
-        "productDetails.imageUrls": 1, // Include the image URLs
-        "products.discountPercentage": 1,
-        "products.productId": 1,
-      },
-    },
-    {
-      $sort: {
-        [sortBy]: sortOrder === "desc" ? -1 : 1,
-      },
-    },
-    {
-      $skip: skip,
-    },
-    {
-      $limit: limit,
-    },
-  ]);
-
-  return flashSales;
 };
+
 
 
 

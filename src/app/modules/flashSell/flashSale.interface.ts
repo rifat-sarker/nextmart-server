@@ -1,7 +1,7 @@
 import { Types } from "mongoose";
 
 export interface IFlashSale {
-  productId: Types.ObjectId;
+  product: Types.ObjectId;
   discountPercentage: number;
   createdBy?: Types.ObjectId
 }
