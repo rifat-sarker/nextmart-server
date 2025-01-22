@@ -101,6 +101,15 @@ productSchema.pre<IProduct>('validate', function (next) {
    next();
 });
 
+productSchema.methods.calculateOfferPrice = async function () {
+   const flashSale = await FlashSale.findOne({ product: this._id });
 
+   if (flashSale) {
+      const discount = (flashSale.discountPercentage / 100) * this.price;
+      return this.price - discount;
+   }
+
+   return null; // or you can return 0 or another default value
+};
 
 export const Product = model<IProduct>('Product', productSchema);

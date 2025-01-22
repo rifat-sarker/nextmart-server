@@ -13,6 +13,7 @@ import Shop from '../shop/shop.model';
 import { IOrderProduct } from '../order/order.interface';
 import { Review } from '../review/review.model';
 import { FlashSale } from '../flashSell/flashSale.model';
+import { off } from 'process';
 
 const createProduct = async (
    productData: Partial<IProduct>,
@@ -167,31 +168,29 @@ const getTrendingProducts = async (limit: number) => {
 
 const getSingleProduct = async (productId: string) => {
    const product = await Product.findById(productId)
-      .populate("shop brand category")
-      .lean();
+      .populate("shop brand category");
 
    if (!product) {
-      throw new AppError(StatusCodes.NOT_FOUND, 'Product not Found');
+      throw new AppError(StatusCodes.NOT_FOUND, 'Product not found');
    }
 
    if (!product.isActive) {
       throw new AppError(StatusCodes.BAD_REQUEST, 'Product is not active');
    }
 
-   const flashSale = await FlashSale.findOne({ product: productId }).select('discountPercentage');
+   const offerPrice = await product.calculateOfferPrice();
+   const reviews = await Review.find({ product: product._id });
 
-   if (flashSale) {
-      const discount = (flashSale.discountPercentage / 100) * product.price;
-      product.offerPrice = product.price - discount;
-   } else {
-      product.offerPrice = null;
-   }
+   const productObj = product.toObject();
 
-   const reviews = await Review.find({ product: product._id }).lean();
-   product.reviews = reviews;
-
-   return product;
+   return {
+      ...productObj,
+      offerPrice,
+      reviews
+   };
 };
+
+
 
 
 const getMyShopProducts = async (query: Record<string, unknown>, authUser: IJwtPayload) => {
