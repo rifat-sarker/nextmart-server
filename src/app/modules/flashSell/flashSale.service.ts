@@ -1,32 +1,45 @@
 import { StatusCodes } from "http-status-codes";
 import AppError from "../../errors/appError";
 import { IJwtPayload } from "../auth/auth.interface";
-import { IFlashSale } from "./flashSale.interface";
+import { ICreateFlashSaleInput, IFlashSale } from "./flashSale.interface";
 import { FlashSale } from "./flashSale.model";
+import User from "../user/user.model";
+import Shop from "../shop/shop.model";
 
 
-const createFlashSale = async (flashSellData: IFlashSale, authUser: IJwtPayload) => {
+const createFlashSale = async (flashSellData: ICreateFlashSaleInput, authUser: IJwtPayload) => {
+  const userHasShop = await User.findById(authUser.userId).select('isActive hasShop');
 
-  const { name, products, startDate, endDate } = flashSellData;
+  if (!userHasShop) throw new AppError(StatusCodes.NOT_FOUND, "User not found!");
+  if (!userHasShop.isActive) throw new AppError(StatusCodes.BAD_REQUEST, "User account is not active!");
+  if (!userHasShop.hasShop) throw new AppError(StatusCodes.BAD_REQUEST, "User does not have any shop!");
 
-  const overlappingSale = await FlashSale.findOne({
-    $or: [
-      { startDate: { $lte: new Date(endDate) }, endDate: { $gte: new Date(startDate) } },
-      { isActive: true },
-    ],
-  });
+  const shopIsActive = await Shop.findOne({
+    user: userHasShop._id,
+    isActive: true
+  }).select("isActive");
 
-  if (overlappingSale) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "An active or overlapping flash sale already exists. Only one flash sale can run at a time.");
-  }
+  if (!shopIsActive) throw new AppError(StatusCodes.BAD_REQUEST, "Shop is not active!");
 
-  const flashSale = new FlashSale({
-    ...flashSellData,
-    createdBy: authUser.userId
-  });
+  const { products, discountPercentage } = flashSellData;
+  const createdBy = authUser.userId;
 
-  await flashSale.save();
-  return flashSale;
+  const operations = products.map((productId) => ({
+    updateOne: {
+      filter: { productId },
+      update: {
+        $setOnInsert: {
+          productId,
+          discountPercentage,
+          createdBy,
+        },
+      },
+      upsert: true,
+    },
+  }));
+
+  const result = await FlashSale.bulkWrite(operations);
+  return result;
 };
 
 
