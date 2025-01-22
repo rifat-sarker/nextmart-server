@@ -86,7 +86,7 @@ const productSchema = new Schema<IProduct>(
    {
       timestamps: true,
       toJSON: { virtuals: true },
-      toObject: { virtuals: true },
+      toObject: { virtuals: true }
    }
 );
 
@@ -101,39 +101,6 @@ productSchema.pre<IProduct>('validate', function (next) {
    next();
 });
 
-productSchema.virtual('reviews', {
-   ref: 'Review',
-   localField: '_id',
-   foreignField: 'product',
-});
 
-productSchema.virtual('offerPrice').get(async function () {
-   const now = new Date();
-
-   const flashSale = await FlashSale.findOne({
-      'products.productId': this._id,
-      isActive: true,
-      startDate: { $lte: now },
-      endDate: { $gte: now },
-   });
-
-   if (flashSale) {
-      const productSale = flashSale.products.find(
-         //@ts-ignore
-         (p) => p.productId.toString() === this._id.toString()
-      );
-
-      if (productSale) {
-         const discount = (this.price * productSale.discountPercentage) / 100;
-         console.log((this.price - discount).toFixed(2));
-         return (this.price - discount).toFixed(2);
-      }
-   }
-
-   return null;
-});
-
-productSchema.set('toJSON', { virtuals: true });
-productSchema.set('toObject', { virtuals: true });
 
 export const Product = model<IProduct>('Product', productSchema);
