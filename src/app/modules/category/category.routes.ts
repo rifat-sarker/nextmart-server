@@ -6,7 +6,6 @@ import auth from '../../middleware/auth';
 import { UserRole } from '../user/user.interface';
 import validateRequest from '../../middleware/validateRequest';
 import { categoryValidation } from './category.validation';
-import User from '../user/user.model';
 
 const router = Router();
 
