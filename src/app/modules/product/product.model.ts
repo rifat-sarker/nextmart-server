@@ -85,8 +85,8 @@ const productSchema = new Schema<IProduct>(
    },
    {
       timestamps: true,
-      toJSON: { virtuals: true },
-      toObject: { virtuals: true }
+      // toJSON: { virtuals: true },
+      // toObject: { virtuals: true }
    }
 );
 

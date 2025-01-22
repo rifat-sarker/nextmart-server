@@ -1,27 +1,179 @@
 import { Order } from '../order/order.model';
 
 const getMetaData = async () => {
-   const dailyOrder = await Order.aggregate([
+   const startOfDay = new Date().setHours(0, 0, 0, 0);
+   const endOfDay = new Date().setHours(23, 59, 59, 999);
+
+   const todaysOrders = await Order.aggregate([
       {
-         $group: {
-            _id: {
-               $dateToString: { format: '%Y-%m-%d', date: '$createdAt' },
+         $match: {
+            createdAt: {
+               $gte: new Date(startOfDay),
+               $lte: new Date(endOfDay),
             },
-            count: { $sum: 1 },
          },
       },
       {
-         $sort: { _id: -1 },
+         $group: {
+            _id: null,
+            totalOrders: { $sum: 1 },
+            totalAmount: { $sum: '$finalAmount' },
+         },
       },
       {
-         $limit: 7,
+         $project: {
+            _id: 0,
+            totalOrders: 1,
+            totalAmount: 1,
+         },
       },
    ]);
-   const metaData = {
-      dailyOrder,
-   };
+   const bestProduct = await Order.aggregate([
+      {
+         $unwind: '$products',
+      },
+      {
+         $lookup: {
+            from: 'products',
+            localField: 'products.product',
+            foreignField: '_id',
+            as: 'productDetails',
+         },
+      },
+      {
+         $group: {
+            _id: '$productDetails._id',
+            count: { $sum: '$products.quantity' },
+            productName: { $first: '$productDetails.name' }, // Get the product name
+         },
+      },
+      {
+         $sort: {
+            count: -1,
+         },
+      },
+      {
+         $limit: 1,
+      },
+      {
+         $project: {
+            _id: 0,
+            productName: 1,
+            count: 1,
+         },
+      },
+   ]);
 
-   return metaData;
+   const bestCategory = await Order.aggregate([
+      { $unwind: '$products' },
+      {
+         $lookup: {
+            from: 'products', // Product collection
+            localField: 'products.product',
+            foreignField: '_id',
+            as: 'productDetails',
+         },
+      },
+      { $unwind: '$productDetails' },
+      {
+         $group: {
+            _id: '$productDetails.category',
+            orderCount: { $sum: 1 },
+         },
+      },
+      { $sort: { orderCount: -1 } },
+      { $limit: 1 },
+      {
+         $lookup: {
+            from: 'categories',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'categoryDetails',
+         },
+      },
+      { $unwind: '$categoryDetails' },
+      {
+         $project: {
+            _id: 0,
+            categoryId: '$_id',
+            categoryName: '$categoryDetails.name',
+            orderCount: 1,
+         },
+      },
+   ]);
+
+   const bestBrand = await Order.aggregate([
+      { $unwind: '$products' },
+      {
+         $lookup: {
+            from: 'products', // Product collection
+            localField: 'products.product',
+            foreignField: '_id',
+            as: 'productDetails',
+         },
+      },
+      { $unwind: '$productDetails' },
+      {
+         $group: {
+            _id: '$productDetails.brand',
+            orderCount: { $sum: 1 },
+         },
+      },
+      { $sort: { orderCount: -1 } },
+      { $limit: 1 },
+      {
+         $lookup: {
+            from: 'brands',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'brandDetails',
+         },
+      },
+      { $unwind: '$brandDetails' },
+      {
+         $project: {
+            _id: 0,
+            brandId: '$_id',
+            brandName: '$brandDetails.name',
+            orderCount: 1,
+         },
+      },
+   ]);
+   const bestShop = await Order.aggregate([
+      {
+         $group: {
+            _id: '$shop',
+            orderCount: { $sum: 1 },
+         },
+      },
+      { $sort: { orderCount: -1 } },
+      { $limit: 1 },
+      {
+         $lookup: {
+            from: 'shops',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'shopDetails',
+         },
+      },
+      { $unwind: '$shopDetails' },
+      {
+         $project: {
+            _id: 0,
+            shopId: '$_id',
+            shopName: '$shopDetails.name',
+            orderCount: 1,
+         },
+      },
+   ]);
+
+   return {
+      todaysOrders,
+      bestProduct,
+      bestBrand,
+      bestCategory,
+      bestShop,
+   };
 };
 
 export const MetaService = {
