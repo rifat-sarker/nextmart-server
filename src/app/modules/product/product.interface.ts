@@ -21,4 +21,6 @@ export interface IProduct extends Document {
   createdAt?: Date;
   updatedAt?: Date;
   reviews?: Record<string, any> | [];
+
+  calculateOfferPrice(): Promise<number | null>;
 }

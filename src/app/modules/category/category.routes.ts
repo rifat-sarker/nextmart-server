@@ -6,7 +6,6 @@ import auth from '../../middleware/auth';
 import { UserRole } from '../user/user.interface';
 import validateRequest from '../../middleware/validateRequest';
 import { categoryValidation } from './category.validation';
-import User from '../user/user.model';
 
 const router = Router();
 
@@ -28,6 +27,12 @@ router.patch(
     parseBody,
     validateRequest(categoryValidation.updateCategoryValidationSchema),
     CategoryController.updateCategory
+)
+
+router.delete(
+    '/:id',
+    auth(UserRole.ADMIN, UserRole.USER),
+    CategoryController.deleteCategory
 )
 
 export const CategoryRoutes = router;

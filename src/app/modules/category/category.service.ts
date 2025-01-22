@@ -7,6 +7,7 @@ import { ICategory } from "./category.interface";
 import { Category } from "./category.model";
 import User from "../user/user.model";
 import { UserRole } from "../user/user.interface";
+import { Product } from "../product/product.model";
 
 const createCategory = async (
   categoryData: Partial<ICategory>,
@@ -89,9 +90,36 @@ const updateCategoryIntoDB = async (
   return result;
 };
 
+const deleteCategoryIntoDB = async (
+  id: string,
+  authUser: IJwtPayload
+) => {
+  const isBrandExist = await Category.findById(id);
+  if (!isBrandExist) {
+    throw new AppError(StatusCodes.NOT_FOUND, 'Category not found!');
+  }
+
+  if (
+    authUser.role === UserRole.USER &&
+    isBrandExist.createdBy.toString() !== authUser.userId
+  ) {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      'You are not able to delete the Category!'
+    );
+  }
+
+  const product = await Product.findOne({ category: id })
+  if (product) throw new AppError(StatusCodes.BAD_REQUEST, "You can not delete the Category. Because the Category is related to products.");
+
+  const deletedCategory = await Category.findByIdAndDelete(id);
+  return deletedCategory;
+};
+
 
 export const CategoryService = {
   createCategory,
   getAllCategory,
-  updateCategoryIntoDB
+  updateCategoryIntoDB,
+  deleteCategoryIntoDB
 }

@@ -13,12 +13,16 @@ import Shop from '../shop/shop.model';
 import { IOrderProduct } from '../order/order.interface';
 import { Review } from '../review/review.model';
 import { FlashSale } from '../flashSell/flashSale.model';
+import { off } from 'process';
+import { hasActiveShop } from '../../utils/hasActiveShop';
 
 const createProduct = async (
    productData: Partial<IProduct>,
    productImages: IImageFiles,
    authUser: IJwtPayload
 ) => {
+   const shop = await hasActiveShop(authUser.userId);
+
    const { images } = productImages;
    if (!images || images.length === 0) {
       throw new AppError(
@@ -28,20 +32,6 @@ const createProduct = async (
    }
 
    productData.imageUrls = images.map((image) => image.path);
-
-   const isUserExists = await User.checkUserExist(authUser.userId);
-   if (!isUserExists.hasShop) {
-      throw new AppError(StatusCodes.BAD_REQUEST, "You don't have a shop!");
-   }
-
-   const shop = await Shop.findOne({ user: isUserExists._id });
-   if (!shop) {
-      throw new AppError(StatusCodes.BAD_REQUEST, 'Shop does not exist!');
-   }
-
-   if (!shop.isActive) {
-      throw new AppError(StatusCodes.BAD_REQUEST, 'Your shop is not active!');
-   }
 
    const isCategoryExists = await Category.findById(productData.category);
    if (!isCategoryExists) {
@@ -167,31 +157,29 @@ const getTrendingProducts = async (limit: number) => {
 
 const getSingleProduct = async (productId: string) => {
    const product = await Product.findById(productId)
-      .populate("shop brand category")
-      .lean();
+      .populate("shop brand category");
 
    if (!product) {
-      throw new AppError(StatusCodes.NOT_FOUND, 'Product not Found');
+      throw new AppError(StatusCodes.NOT_FOUND, 'Product not found');
    }
 
    if (!product.isActive) {
       throw new AppError(StatusCodes.BAD_REQUEST, 'Product is not active');
    }
 
-   const flashSale = await FlashSale.findOne({ product: productId }).select('discountPercentage');
+   const offerPrice = await product.calculateOfferPrice();
+   const reviews = await Review.find({ product: product._id });
 
-   if (flashSale) {
-      const discount = (flashSale.discountPercentage / 100) * product.price;
-      product.offerPrice = product.price - discount;
-   } else {
-      product.offerPrice = null;
-   }
+   const productObj = product.toObject();
 
-   const reviews = await Review.find({ product: product._id }).lean();
-   product.reviews = reviews;
-
-   return product;
+   return {
+      ...productObj,
+      offerPrice,
+      reviews
+   };
 };
+
+
 
 
 const getMyShopProducts = async (query: Record<string, unknown>, authUser: IJwtPayload) => {
