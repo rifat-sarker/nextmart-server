@@ -6,6 +6,7 @@ import { FlashSale } from "./flashSale.model";
 import User from "../user/user.model";
 import Shop from "../shop/shop.model";
 import QueryBuilder from "../../builder/QueryBuilder";
+import { Product } from "../product/product.model";
 
 
 const createFlashSale = async (flashSellData: ICreateFlashSaleInput, authUser: IJwtPayload) => {
@@ -43,39 +44,49 @@ const createFlashSale = async (flashSellData: ICreateFlashSaleInput, authUser: I
   return result;
 };
 
-
 const getActiveFlashSalesService = async (query: Record<string, unknown>) => {
   const { minPrice, maxPrice, ...pQuery } = query;
 
-  const productQuery = new QueryBuilder(
+  const flashSaleQuery = new QueryBuilder(
     FlashSale.find()
-      .populate('product'),
+      .populate('product')
+      .populate('product.category', 'name')
+      .populate('product.shop', 'shopName')
+      .populate('product.brand', 'name'),
     query
   )
-    .paginate()
+    .paginate();
 
+  const flashSales = await flashSaleQuery.modelQuery.lean();
 
-  const result = await productQuery.modelQuery;
+  const flashSaleMap = flashSales.reduce((acc, flashSale) => {
+    //@ts-ignore
+    acc[flashSale.product._id.toString()] = flashSale.discountPercentage;
+    return acc;
+  }, {});
 
-  // const productsWithOfferPrice = await Promise.all(
-  //   products.map(async (product) => {
-  //     const productDoc = await Product.findById(product._id);
-  //     const offerPrice = productDoc?.offerPrice;
-  //     return {
-  //       ...product,
-  //       offerPrice: Number(offerPrice) || null,
-  //     };
-  //   })
-  // );
+  const productsWithOfferPrice = flashSales.map((flashSale: any) => {
+    const product = flashSale.product;
+    //@ts-ignore
+    const discountPercentage = flashSaleMap[product._id.toString()];
 
-  const meta = await productQuery.countTotal();
+    if (discountPercentage) {
+      const discount = (discountPercentage / 100) * product.price;
+      product.offerPrice = product.price - discount;
+    } else {
+      product.offerPrice = null;
+    }
+
+    return product;
+  });
+
+  const meta = await flashSaleQuery.countTotal();
 
   return {
     meta,
-    result
+    result: productsWithOfferPrice,
   };
 };
-
 
 
 
