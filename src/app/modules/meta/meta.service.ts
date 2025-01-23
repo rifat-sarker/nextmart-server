@@ -1,3 +1,5 @@
+import { StatusCodes } from 'http-status-codes';
+import AppError from '../../errors/appError';
 import { Order } from '../order/order.model';
 
 const getMetaData = async () => {
@@ -167,8 +169,6 @@ const getMetaData = async () => {
       },
    ]);
 
-   const dailyOrders = await Order.aggregate([]);
-
    const orderStatuses = await Order.aggregate([
       {
          $group: {
@@ -213,7 +213,50 @@ const getOrdersByDate = async (
             },
          },
       ]);
+
+      if (orders.length === 0) {
+         throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'No orders found for the given date'
+         );
+      }
+
       return orders;
+   }
+
+   if (startDate && endDate) {
+      const orders = await Order.aggregate([
+         {
+            $group: {
+               _id: {
+                  date: {
+                     $dateToString: { format: '%Y-%m-%d', date: '$createdAt' },
+                  },
+               },
+               count: { $sum: 1 },
+            },
+         },
+         {
+            $match: {
+               '_id.date': {
+                  $gte: startDate,
+                  $lte: endDate,
+               },
+            },
+         },
+      ]);
+
+      if (orders.length === 0) {
+         throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'No orders found for the given date range'
+         );
+      }
+
+      return orders;
+   }
+
+   if (startDate && endDate && groupBy === 'week') {
    }
 };
 
