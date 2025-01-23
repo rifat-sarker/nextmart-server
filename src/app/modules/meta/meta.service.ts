@@ -161,8 +161,19 @@ const getMetaData = async () => {
          $project: {
             _id: 0,
             shopId: '$_id',
-            shopName: '$shopDetails.name',
+            shopName: '$shopDetails.shopName',
             orderCount: 1,
+         },
+      },
+   ]);
+
+   const dailyOrders = await Order.aggregate([]);
+
+   const orderStatuses = await Order.aggregate([
+      {
+         $group: {
+            _id: '$status',
+            count: { $sum: 1 },
          },
       },
    ]);
@@ -173,9 +184,40 @@ const getMetaData = async () => {
       bestBrand,
       bestCategory,
       bestShop,
+      orderStatuses,
    };
+};
+
+const getOrdersByDate = async (
+   startDate: string,
+   endDate?: string,
+   groupBy?: string
+) => {
+   console.log({ startDate });
+
+   if (startDate && !endDate) {
+      const orders = await Order.aggregate([
+         {
+            $group: {
+               _id: {
+                  date: {
+                     $dateToString: { format: '%Y-%m-%d', date: '$createdAt' },
+                  },
+               },
+               count: { $sum: 1 },
+            },
+         },
+         {
+            $match: {
+               '_id.date': startDate,
+            },
+         },
+      ]);
+      return orders;
+   }
 };
 
 export const MetaService = {
    getMetaData,
+   getOrdersByDate,
 };

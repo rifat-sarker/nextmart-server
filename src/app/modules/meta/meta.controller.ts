@@ -13,7 +13,23 @@ const getMetaData = catchAsync(async (req: Request, res: Response) => {
       data: result,
    });
 });
+const getOrdersByDate = catchAsync(async (req: Request, res: Response) => {
+   const { startDate, endDate, groupBy } = req.query;
+
+   const result = await MetaService.getOrdersByDate(
+      startDate as string,
+      endDate as string,
+      groupBy as string
+   );
+   sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: 'Meta data for orders retrieved successfully',
+      data: result,
+   });
+});
 
 export const MetaController = {
    getMetaData,
+   getOrdersByDate,
 };
