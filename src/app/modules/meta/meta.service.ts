@@ -1,3 +1,5 @@
+import { StatusCodes } from 'http-status-codes';
+import AppError from '../../errors/appError';
 import { Order } from '../order/order.model';
 
 const getMetaData = async () => {
@@ -161,8 +163,17 @@ const getMetaData = async () => {
          $project: {
             _id: 0,
             shopId: '$_id',
-            shopName: '$shopDetails.name',
+            shopName: '$shopDetails.shopName',
             orderCount: 1,
+         },
+      },
+   ]);
+
+   const orderStatuses = await Order.aggregate([
+      {
+         $group: {
+            _id: '$status',
+            count: { $sum: 1 },
          },
       },
    ]);
@@ -173,9 +184,83 @@ const getMetaData = async () => {
       bestBrand,
       bestCategory,
       bestShop,
+      orderStatuses,
    };
+};
+
+const getOrdersByDate = async (
+   startDate: string,
+   endDate?: string,
+   groupBy?: string
+) => {
+   console.log({ startDate });
+
+   if (startDate && !endDate) {
+      const orders = await Order.aggregate([
+         {
+            $group: {
+               _id: {
+                  date: {
+                     $dateToString: { format: '%Y-%m-%d', date: '$createdAt' },
+                  },
+               },
+               count: { $sum: 1 },
+            },
+         },
+         {
+            $match: {
+               '_id.date': startDate,
+            },
+         },
+      ]);
+
+      if (orders.length === 0) {
+         throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'No orders found for the given date'
+         );
+      }
+
+      return orders;
+   }
+
+   if (startDate && endDate) {
+      const orders = await Order.aggregate([
+         {
+            $group: {
+               _id: {
+                  date: {
+                     $dateToString: { format: '%Y-%m-%d', date: '$createdAt' },
+                  },
+               },
+               count: { $sum: 1 },
+            },
+         },
+         {
+            $match: {
+               '_id.date': {
+                  $gte: startDate,
+                  $lte: endDate,
+               },
+            },
+         },
+      ]);
+
+      if (orders.length === 0) {
+         throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'No orders found for the given date range'
+         );
+      }
+
+      return orders;
+   }
+
+   if (startDate && endDate && groupBy === 'week') {
+   }
 };
 
 export const MetaService = {
    getMetaData,
+   getOrdersByDate,
 };
