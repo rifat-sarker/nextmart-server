@@ -1,6 +1,8 @@
 import { StatusCodes } from 'http-status-codes';
 import AppError from '../../errors/appError';
 import { Order } from '../order/order.model';
+import { PipelineStage } from 'mongoose';
+import { pipe } from 'pdfkit';
 
 const getMetaData = async () => {
    const startOfDay = new Date().setHours(0, 0, 0, 0);
@@ -193,71 +195,66 @@ const getOrdersByDate = async (
    endDate?: string,
    groupBy?: string
 ) => {
-   console.log({ startDate });
-
-   if (startDate && !endDate) {
-      const orders = await Order.aggregate([
-         {
-            $group: {
-               _id: {
-                  date: {
-                     $dateToString: { format: '%Y-%m-%d', date: '$createdAt' },
-                  },
-               },
-               count: { $sum: 1 },
-            },
-         },
-         {
-            $match: {
-               '_id.date': startDate,
-            },
-         },
-      ]);
-
-      if (orders.length === 0) {
-         throw new AppError(
-            StatusCodes.NOT_FOUND,
-            'No orders found for the given date'
-         );
+   // Build date filter
+   const matchStage: Record<string, any> = {};
+   if (startDate || endDate) {
+      matchStage.createdAt = {};
+      if (startDate) {
+         const start = new Date(startDate);
+         start.setHours(0, 0, 0, 0);
+         matchStage.createdAt.$gte = start;
       }
 
-      return orders;
-   }
-
-   if (startDate && endDate) {
-      const orders = await Order.aggregate([
-         {
-            $group: {
-               _id: {
-                  date: {
-                     $dateToString: { format: '%Y-%m-%d', date: '$createdAt' },
-                  },
-               },
-               count: { $sum: 1 },
-            },
-         },
-         {
-            $match: {
-               '_id.date': {
-                  $gte: startDate,
-                  $lte: endDate,
-               },
-            },
-         },
-      ]);
-
-      if (orders.length === 0) {
-         throw new AppError(
-            StatusCodes.NOT_FOUND,
-            'No orders found for the given date range'
-         );
+      if (endDate) {
+         const end = new Date(endDate);
+         end.setHours(23, 59, 59, 999);
+         matchStage.createdAt.$lte = end;
       }
-
-      return orders;
    }
 
-   if (startDate && endDate && groupBy === 'week') {
+   // Grouping stage
+   let groupStage: Record<string, any> | null = null;
+   switch (groupBy) {
+      case 'day':
+         groupStage = {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            totalOrders: { $sum: 1 },
+            totalAmount: { $sum: '$totalAmount' },
+         };
+         break;
+      case 'week':
+         groupStage = {
+            _id: { $week: '$createdAt' },
+            totalOrders: { $sum: 1 },
+            totalAmount: { $sum: '$totalAmount' },
+         };
+         break;
+      case 'month':
+         groupStage = {
+            _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } },
+            totalOrders: { $sum: 1 },
+            totalAmount: { $sum: '$totalAmount' },
+         };
+         break;
+      case 'year':
+         groupStage = {
+            _id: { $year: '$createdAt' },
+            totalOrders: { $sum: 1 },
+            totalAmount: { $sum: '$totalAmount' },
+         };
+         break;
+      default:
+         groupStage = null;
    }
+
+   const pipeline: PipelineStage[] = [
+      { $match: matchStage },
+      ...(groupStage ? [{ $group: groupStage }] : []),
+      { $sort: { _id: 1 } },
+   ];
+
+   const orders = await Order.aggregate(pipeline);
+   return orders;
 };
 
 export const MetaService = {
