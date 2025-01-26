@@ -258,103 +258,107 @@ const getOrdersByDate = async (
 };
 
 const getCustomerMetaData = async () => {
-   // total unique customers
-   const customerCount = await Order.aggregate([
+   const CustomerMetaInfo = await Order.aggregate([
       {
-         $group: {
-            _id: '$user',
+         $facet: {
+            // Count total unique customers
+            customerCount: [
+               {
+                  $group: { _id: '$user' },
+               },
+               {
+                  $count: 'totalCustomers',
+               },
+            ],
+
+            // Find new customers (only ordered once)
+            newCustomer: [
+               {
+                  $group: {
+                     _id: '$user',
+                     orderCount: { $sum: 1 },
+                  },
+               },
+               {
+                  $match: { orderCount: 1 },
+               },
+               {
+                  $count: 'newCustomers',
+               },
+            ],
+
+            // Top 3 customers with the most orders
+            topThreeMostOrderedCustomer: [
+               {
+                  $group: {
+                     _id: '$user',
+                     totalOrders: { $sum: 1 },
+                  },
+               },
+               {
+                  $lookup: {
+                     from: 'users',
+                     localField: '_id',
+                     foreignField: '_id',
+                     as: 'userDetails',
+                  },
+               },
+               {
+                  $unwind: '$userDetails',
+               },
+               {
+                  $project: {
+                     userId: '$_id',
+                     userName: '$userDetails.name',
+                     totalOrders: 1,
+                  },
+               },
+               {
+                  $sort: { totalOrders: -1 },
+               },
+               {
+                  $limit: 3,
+               },
+            ],
+
+            // Top 3 customers who spent the most
+            topThreeMostSpendingCustomer: [
+               {
+                  $group: {
+                     _id: '$user',
+                     totalAmountSpent: { $sum: '$totalAmount' },
+                  },
+               },
+               {
+                  $lookup: {
+                     from: 'users',
+                     localField: '_id',
+                     foreignField: '_id',
+                     as: 'userDetails',
+                  },
+               },
+               {
+                  $unwind: '$userDetails',
+               },
+               {
+                  $project: {
+                     userId: '$_id',
+                     userName: '$userDetails.name',
+                     totalAmountSpent: 1,
+                  },
+               },
+               {
+                  $sort: { totalAmountSpent: -1 },
+               },
+               {
+                  $limit: 3,
+               },
+            ],
          },
-      },
-      {
-         $count: 'customerCount',
       },
    ]);
 
-   // top 3 customers based on orders
-   const topThreeMostOrderedCustomer = await Order.aggregate([
-      {
-         $group: {
-            _id: '$user',
-            totalOrders: { $sum: 1 },
-         },
-      },
-      {
-         $lookup: {
-            from: 'users',
-            localField: '_id',
-            foreignField: '_id',
-            as: 'userDetails',
-         },
-      },
-
-      {
-         $project: {
-            _id: 0,
-            userId: '$_id',
-            userName: '$userDetails.name',
-            totalOrders: 1,
-         },
-      },
-      {
-         $sort: { totalOrders: -1 },
-      },
-      {
-         $limit: 3,
-      },
-   ]);
-   // top 3 customers based on amount
-   const topThreeMostSpendingCustomer = await Order.aggregate([
-      {
-         $group: {
-            _id: '$user',
-            totalAmounts: { $sum: '$totalAmount' },
-         },
-      },
-      {
-         $lookup: {
-            from: 'users',
-            localField: '_id',
-            foreignField: '_id',
-            as: 'userDetails',
-         },
-      },
-
-      {
-         $project: {
-            _id: 0,
-            userId: '$_id',
-            userName: '$userDetails.name',
-            totalAmounts: 1,
-         },
-      },
-      {
-         $sort: { totalAmounts: -1 },
-      },
-      {
-         $limit: 3,
-      },
-   ]);
-
-   const newCustomer = await Order.aggregate([
-      {
-         $group: {
-            _id: '$user',
-            count: { $sum: 1 },
-         },
-      },
-      {
-         $match: {
-            count: { $eq: 1 },
-         },
-      },
-   ]);
-
-   return {
-      customerCount,
-      newCustomer,
-      topThreeMostOrderedCustomer,
-      topThreeMostSpendingCustomer,
-   };
+   return CustomerMetaInfo[0];
 };
 
 export const MetaService = {
