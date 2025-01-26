@@ -279,6 +279,23 @@ const getCustomerMetaData = async () => {
          },
       },
       {
+         $lookup: {
+            from: 'users',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'userDetails',
+         },
+      },
+
+      {
+         $project: {
+            _id: 0,
+            userId: '$_id',
+            userName: '$userDetails.name',
+            totalOrders: 1,
+         },
+      },
+      {
          $sort: { totalOrders: -1 },
       },
       {
@@ -294,6 +311,23 @@ const getCustomerMetaData = async () => {
          },
       },
       {
+         $lookup: {
+            from: 'users',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'userDetails',
+         },
+      },
+
+      {
+         $project: {
+            _id: 0,
+            userId: '$_id',
+            userName: '$userDetails.name',
+            totalAmounts: 1,
+         },
+      },
+      {
          $sort: { totalAmounts: -1 },
       },
       {
@@ -301,8 +335,23 @@ const getCustomerMetaData = async () => {
       },
    ]);
 
+   const newCustomer = await Order.aggregate([
+      {
+         $group: {
+            _id: '$user',
+            count: { $sum: 1 },
+         },
+      },
+      {
+         $match: {
+            count: { $eq: 1 },
+         },
+      },
+   ]);
+
    return {
       customerCount,
+      newCustomer,
       topThreeMostOrderedCustomer,
       topThreeMostSpendingCustomer,
    };
