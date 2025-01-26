@@ -358,8 +358,46 @@ const getCustomerMetaData = async () => {
    return CustomerMetaInfo[0];
 };
 
+const getAOVOverTime = async (startDate?: string, endDate?: string) => {
+   const matchStage: Record<string, any> = {};
+   if (startDate || endDate) {
+      matchStage.createdAt = {};
+      if (startDate) matchStage.createdAt.$gte = new Date(startDate);
+      if (endDate) matchStage.createdAt.$lte = new Date(endDate);
+   }
+
+   const aovData = await Order.aggregate([
+      { $match: matchStage },
+
+      {
+         $group: {
+            _id: {
+               $dateToString: { format: '%Y-%m-%d', date: '$createdAt' },
+            },
+            totalRevenue: { $sum: '$totalAmount' },
+            orderCount: { $sum: 1 },
+         },
+      },
+
+      {
+         $project: {
+            _id: 0,
+            date: '$_id',
+            totalRevenue: 1,
+            orderCount: 1,
+            averageOrderValue: { $divide: ['$totalRevenue', '$orderCount'] },
+         },
+      },
+
+      { $sort: { date: 1 } },
+   ]);
+
+   return aovData;
+};
+
 export const MetaService = {
    getMetaData,
    getOrdersByDate,
    getCustomerMetaData,
+   getAOVOverTime,
 };
