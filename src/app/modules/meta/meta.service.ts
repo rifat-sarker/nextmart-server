@@ -1,8 +1,5 @@
-import { StatusCodes } from 'http-status-codes';
-import AppError from '../../errors/appError';
 import { Order } from '../order/order.model';
 import { PipelineStage } from 'mongoose';
-import { pipe } from 'pdfkit';
 
 const getMetaData = async () => {
    const startOfDay = new Date().setHours(0, 0, 0, 0);
@@ -257,7 +254,112 @@ const getOrdersByDate = async (
    return orders;
 };
 
+const getCustomerMetaData = async () => {
+   const CustomerMetaInfo = await Order.aggregate([
+      {
+         $facet: {
+            // Count total unique customers
+            customerCount: [
+               {
+                  $group: { _id: '$user' },
+               },
+               {
+                  $count: 'totalCustomers',
+               },
+            ],
+
+            // Find new customers (only ordered once)
+            newCustomer: [
+               {
+                  $group: {
+                     _id: '$user',
+                     orderCount: { $sum: 1 },
+                  },
+               },
+               {
+                  $match: { orderCount: 1 },
+               },
+               {
+                  $count: 'newCustomers',
+               },
+            ],
+
+            // Top 3 customers with the most orders
+            topThreeMostOrderedCustomer: [
+               {
+                  $group: {
+                     _id: '$user',
+                     totalOrders: { $sum: 1 },
+                  },
+               },
+               {
+                  $lookup: {
+                     from: 'users',
+                     localField: '_id',
+                     foreignField: '_id',
+                     as: 'userDetails',
+                  },
+               },
+               {
+                  $unwind: '$userDetails',
+               },
+               {
+                  $project: {
+                     userId: '$_id',
+                     userName: '$userDetails.name',
+                     totalOrders: 1,
+                  },
+               },
+               {
+                  $sort: { totalOrders: -1 },
+               },
+               {
+                  $limit: 3,
+               },
+            ],
+
+            // Top 3 customers who spent the most
+            topThreeMostSpendingCustomer: [
+               {
+                  $group: {
+                     _id: '$user',
+                     totalAmountSpent: { $sum: '$totalAmount' },
+                  },
+               },
+               {
+                  $lookup: {
+                     from: 'users',
+                     localField: '_id',
+                     foreignField: '_id',
+                     as: 'userDetails',
+                  },
+               },
+               {
+                  $unwind: '$userDetails',
+               },
+               {
+                  $project: {
+                     userId: '$_id',
+                     userName: '$userDetails.name',
+                     totalAmountSpent: 1,
+                  },
+               },
+               {
+                  $sort: { totalAmountSpent: -1 },
+               },
+               {
+                  $limit: 3,
+               },
+            ],
+         },
+      },
+   ]);
+
+   return CustomerMetaInfo[0];
+};
+
 export const MetaService = {
    getMetaData,
    getOrdersByDate,
+   getCustomerMetaData,
 };
