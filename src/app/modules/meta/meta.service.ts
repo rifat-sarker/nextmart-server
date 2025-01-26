@@ -1,8 +1,5 @@
-import { StatusCodes } from 'http-status-codes';
-import AppError from '../../errors/appError';
 import { Order } from '../order/order.model';
 import { PipelineStage } from 'mongoose';
-import { pipe } from 'pdfkit';
 
 const getMetaData = async () => {
    const startOfDay = new Date().setHours(0, 0, 0, 0);
