@@ -257,7 +257,59 @@ const getOrdersByDate = async (
    return orders;
 };
 
+const getCustomerMetaData = async () => {
+   // total unique customers
+   const customerCount = await Order.aggregate([
+      {
+         $group: {
+            _id: '$user',
+         },
+      },
+      {
+         $count: 'customerCount',
+      },
+   ]);
+
+   // top 3 customers based on orders
+   const topThreeMostOrderedCustomer = await Order.aggregate([
+      {
+         $group: {
+            _id: '$user',
+            totalOrders: { $sum: 1 },
+         },
+      },
+      {
+         $sort: { totalOrders: -1 },
+      },
+      {
+         $limit: 3,
+      },
+   ]);
+   // top 3 customers based on amount
+   const topThreeMostSpendingCustomer = await Order.aggregate([
+      {
+         $group: {
+            _id: '$user',
+            totalAmounts: { $sum: '$totalAmount' },
+         },
+      },
+      {
+         $sort: { totalAmounts: -1 },
+      },
+      {
+         $limit: 3,
+      },
+   ]);
+
+   return {
+      customerCount,
+      topThreeMostOrderedCustomer,
+      topThreeMostSpendingCustomer,
+   };
+};
+
 export const MetaService = {
    getMetaData,
    getOrdersByDate,
+   getCustomerMetaData,
 };
