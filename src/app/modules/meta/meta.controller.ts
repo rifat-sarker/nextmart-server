@@ -28,8 +28,35 @@ const getOrdersByDate = catchAsync(async (req: Request, res: Response) => {
       data: result,
    });
 });
+const getCustomerMetaData = catchAsync(async (req: Request, res: Response) => {
+   const {} = req.query;
+
+   const result = await MetaService.getCustomerMetaData();
+   sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: 'Meta data for customer retrieved successfully',
+      data: result,
+   });
+});
+const getAOVOverTime = catchAsync(async (req: Request, res: Response) => {
+   const { startDate, endDate } = req.query;
+
+   const result = await MetaService.getAOVOverTime(
+      startDate as string,
+      endDate as string
+   );
+   sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: 'Meta data for AOV retrieved successfully',
+      data: result,
+   });
+});
 
 export const MetaController = {
    getMetaData,
    getOrdersByDate,
+   getCustomerMetaData,
+   getAOVOverTime,
 };

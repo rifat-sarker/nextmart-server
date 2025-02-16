@@ -1,6 +1,5 @@
-import { StatusCodes } from 'http-status-codes';
-import AppError from '../../errors/appError';
 import { Order } from '../order/order.model';
+import { PipelineStage } from 'mongoose';
 
 const getMetaData = async () => {
    const startOfDay = new Date().setHours(0, 0, 0, 0);
@@ -193,74 +192,212 @@ const getOrdersByDate = async (
    endDate?: string,
    groupBy?: string
 ) => {
-   console.log({ startDate });
-
-   if (startDate && !endDate) {
-      const orders = await Order.aggregate([
-         {
-            $group: {
-               _id: {
-                  date: {
-                     $dateToString: { format: '%Y-%m-%d', date: '$createdAt' },
-                  },
-               },
-               count: { $sum: 1 },
-            },
-         },
-         {
-            $match: {
-               '_id.date': startDate,
-            },
-         },
-      ]);
-
-      if (orders.length === 0) {
-         throw new AppError(
-            StatusCodes.NOT_FOUND,
-            'No orders found for the given date'
-         );
+   // Build date filter
+   const matchStage: Record<string, any> = {};
+   if (startDate || endDate) {
+      matchStage.createdAt = {};
+      if (startDate) {
+         const start = new Date(startDate);
+         start.setHours(0, 0, 0, 0);
+         matchStage.createdAt.$gte = start;
       }
 
-      return orders;
+      if (endDate) {
+         const end = new Date(endDate);
+         end.setHours(23, 59, 59, 999);
+         matchStage.createdAt.$lte = end;
+      }
    }
 
-   if (startDate && endDate) {
-      const orders = await Order.aggregate([
-         {
-            $group: {
-               _id: {
-                  date: {
-                     $dateToString: { format: '%Y-%m-%d', date: '$createdAt' },
+   // Grouping stage
+   let groupStage: Record<string, any> | null = null;
+   switch (groupBy) {
+      case 'day':
+         groupStage = {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            totalOrders: { $sum: 1 },
+            totalAmount: { $sum: '$totalAmount' },
+         };
+         break;
+      case 'week':
+         groupStage = {
+            _id: { $week: '$createdAt' },
+            totalOrders: { $sum: 1 },
+            totalAmount: { $sum: '$totalAmount' },
+         };
+         break;
+      case 'month':
+         groupStage = {
+            _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } },
+            totalOrders: { $sum: 1 },
+            totalAmount: { $sum: '$totalAmount' },
+         };
+         break;
+      case 'year':
+         groupStage = {
+            _id: { $year: '$createdAt' },
+            totalOrders: { $sum: 1 },
+            totalAmount: { $sum: '$totalAmount' },
+         };
+         break;
+      default:
+         groupStage = null;
+   }
+
+   const pipeline: PipelineStage[] = [
+      { $match: matchStage },
+      ...(groupStage ? [{ $group: groupStage }] : []),
+      { $sort: { _id: 1 } },
+   ];
+
+   const orders = await Order.aggregate(pipeline);
+   return orders;
+};
+
+const getCustomerMetaData = async () => {
+   const CustomerMetaInfo = await Order.aggregate([
+      {
+         $facet: {
+            // Count total unique customers
+            customerCount: [
+               {
+                  $group: { _id: '$user' },
+               },
+               {
+                  $count: 'totalCustomers',
+               },
+            ],
+
+            // Find new customers (only ordered once)
+            newCustomer: [
+               {
+                  $group: {
+                     _id: '$user',
+                     orderCount: { $sum: 1 },
                   },
                },
-               count: { $sum: 1 },
-            },
-         },
-         {
-            $match: {
-               '_id.date': {
-                  $gte: startDate,
-                  $lte: endDate,
+               {
+                  $match: { orderCount: 1 },
                },
-            },
+               {
+                  $count: 'newCustomers',
+               },
+            ],
+
+            // Top 3 customers with the most orders
+            topThreeMostOrderedCustomer: [
+               {
+                  $group: {
+                     _id: '$user',
+                     totalOrders: { $sum: 1 },
+                  },
+               },
+               {
+                  $lookup: {
+                     from: 'users',
+                     localField: '_id',
+                     foreignField: '_id',
+                     as: 'userDetails',
+                  },
+               },
+               {
+                  $unwind: '$userDetails',
+               },
+               {
+                  $project: {
+                     userId: '$_id',
+                     userName: '$userDetails.name',
+                     totalOrders: 1,
+                  },
+               },
+               {
+                  $sort: { totalOrders: -1 },
+               },
+               {
+                  $limit: 3,
+               },
+            ],
+
+            // Top 3 customers who spent the most
+            topThreeMostSpendingCustomer: [
+               {
+                  $group: {
+                     _id: '$user',
+                     totalAmountSpent: { $sum: '$totalAmount' },
+                  },
+               },
+               {
+                  $lookup: {
+                     from: 'users',
+                     localField: '_id',
+                     foreignField: '_id',
+                     as: 'userDetails',
+                  },
+               },
+               {
+                  $unwind: '$userDetails',
+               },
+               {
+                  $project: {
+                     userId: '$_id',
+                     userName: '$userDetails.name',
+                     totalAmountSpent: 1,
+                  },
+               },
+               {
+                  $sort: { totalAmountSpent: -1 },
+               },
+               {
+                  $limit: 3,
+               },
+            ],
          },
-      ]);
+      },
+   ]);
 
-      if (orders.length === 0) {
-         throw new AppError(
-            StatusCodes.NOT_FOUND,
-            'No orders found for the given date range'
-         );
-      }
+   return CustomerMetaInfo[0];
+};
 
-      return orders;
+const getAOVOverTime = async (startDate?: string, endDate?: string) => {
+   const matchStage: Record<string, any> = {};
+   if (startDate || endDate) {
+      matchStage.createdAt = {};
+      if (startDate) matchStage.createdAt.$gte = new Date(startDate);
+      if (endDate) matchStage.createdAt.$lte = new Date(endDate);
    }
 
-   if (startDate && endDate && groupBy === 'week') {
-   }
+   const aovData = await Order.aggregate([
+      { $match: matchStage },
+
+      {
+         $group: {
+            _id: {
+               $dateToString: { format: '%Y-%m-%d', date: '$createdAt' },
+            },
+            totalRevenue: { $sum: '$totalAmount' },
+            orderCount: { $sum: 1 },
+         },
+      },
+
+      {
+         $project: {
+            _id: 0,
+            date: '$_id',
+            totalRevenue: 1,
+            orderCount: 1,
+            averageOrderValue: { $divide: ['$totalRevenue', '$orderCount'] },
+         },
+      },
+
+      { $sort: { date: 1 } },
+   ]);
+
+   return aovData;
 };
 
 export const MetaService = {
    getMetaData,
    getOrdersByDate,
+   getCustomerMetaData,
+   getAOVOverTime,
 };
