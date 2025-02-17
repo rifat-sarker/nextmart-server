@@ -7,11 +7,8 @@ const router = Router();
 
 router.get(
     '/',
-    auth(UserRole.ADMIN),
+    auth(UserRole.ADMIN, UserRole.USER),
     MetaController.getMetaData
 );
-router.get('/orders', MetaController.getOrdersByDate);
-router.get('/customers', MetaController.getCustomerMetaData);
-router.get('/aov', MetaController.getAOVOverTime);
 
 export const MetaRoutes = router;
