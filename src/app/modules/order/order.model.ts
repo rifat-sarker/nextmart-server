@@ -124,6 +124,9 @@ orderSchema.pre("validate", async function (next) {
 
   if (order.coupon) {
     const couponDetails = await Coupon.findById(order.coupon);
+    if (String(shopId) === couponDetails?.shop.toString()) {
+      throw new AppError(StatusCodes.BAD_REQUEST, "The coupon is not applicable for your selected products")
+    }
     if (couponDetails && couponDetails.isActive) {
       if (totalAmount >= couponDetails.minOrderAmount) {
         if (couponDetails.discountType === "Percentage") {
