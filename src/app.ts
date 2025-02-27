@@ -21,6 +21,7 @@ app.use("/api/v1", router);
 
 // seedAdmin();
 
+
 // Test route
 app.get("/", (req: Request, res: Response, next: NextFunction) => {
   const currentDateTime = new Date().toISOString();
